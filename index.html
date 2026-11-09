@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ნადირობა — How to Hunt</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#9fd8f5;font-family:"Noto Sans Georgian","Segoe UI",Sylfaen,system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+.hidden{display:none!important}
+.pill{background:rgba(20,35,25,.58);border:2px solid rgba(255,255,255,.22);border-radius:14px;padding:8px 14px;backdrop-filter:blur(3px)}
+#hud{position:fixed;inset:0;pointer-events:none}
+#tl{position:absolute;left:16px;top:14px;width:220px}
+#hName{font-weight:800;font-size:15px;margin-bottom:6px}
+.bar{height:9px;background:rgba(0,0,0,.5);border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#d8a31a,#f4d35e)}
+#money{position:absolute;right:16px;top:14px;font-size:26px;font-weight:800;color:#ffe066;text-shadow:0 2px 0 #7a5a10}
+#cross{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;background:rgba(255,255,255,.85);border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.4);transition:opacity .15s}
+#prompt{position:absolute;left:50%;bottom:150px;transform:translateX(-50%);font-size:18px;font-weight:700;display:none}
+#toasts{position:absolute;left:50%;top:64px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;width:min(640px,70vw)}
+.toast{background:rgba(20,35,25,.8);padding:6px 16px;border-radius:10px;font-size:15px;text-align:center;animation:ti .2s}
+.toast.good{border:1px solid #6fcf6f}.toast.bad{border:1px solid #e5534b}.toast.gold{border:1px solid #ffd866}
+@keyframes ti{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+#gear{position:absolute;left:16px;bottom:16px;min-width:270px}
+#gear b{color:#ffe066}
+#shells{display:flex;gap:4px;margin:6px 0;min-height:22px}
+.shell{width:9px;height:22px;border-radius:2px;border:1px solid rgba(0,0,0,.5);position:relative}
+.shell::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:#c9a227}
+.shell.bird{background:#2f6fb3}.shell.buck{background:#b3382e}.shell.empty{opacity:.22}
+#rl{position:absolute;left:50%;bottom:110px;width:160px;height:6px;margin-left:-80px;background:rgba(0,0,0,.5);border-radius:3px;overflow:hidden;display:none}#rl i{display:block;height:100%;width:0;background:#ffe066}
+#black{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity 1s;z-index:5}
+#hurt{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle,transparent 55%,rgba(255,230,160,.0) 100%);z-index:4}
+.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;background:rgba(10,30,15,.5);padding:16px}
+.card{background:linear-gradient(#35592a,#243d1c);border:3px solid #a9d27a;border-radius:18px;padding:26px 30px;width:min(580px,96vw);text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.45);max-height:94vh;overflow:auto}
+.card.wide{width:min(1020px,97vw);text-align:left}
+h1{font-size:50px;letter-spacing:2px;color:#ffe066;text-shadow:0 4px 0 #6a4310}
+h2{font-size:24px;color:#ffe066}
+.sub{opacity:.9;margin:6px 0 14px}
+input[type=text]{width:100%;padding:11px 12px;border-radius:10px;border:2px solid #7aa84a;background:#16260f;color:#fff;font-size:17px;outline:none;text-align:center}
+button{font:inherit;font-weight:700;cursor:pointer;border:none;border-radius:10px;padding:10px 18px;background:#ffb62e;color:#4a2c00;box-shadow:0 3px 0 #a86a00}
+button:hover:not(:disabled){filter:brightness(1.08)}button:disabled{opacity:.45;cursor:default}
+button.alt{background:#9be06a;color:#10300a;box-shadow:0 3px 0 #5a9a30}
+.row{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}.row button{flex:1;min-width:130px}
+.keys{display:grid;grid-template-columns:1fr 1fr;gap:3px 16px;text-align:left;font-size:13px;margin-top:16px}.keys b{color:#ffe066;display:inline-block;min-width:64px}
+.shead{display:flex;align-items:center;gap:12px}.shead .m{margin-left:auto;font-size:24px;font-weight:800;color:#ffe066}
+.tabs{display:flex;gap:8px;margin:12px 0}.tabs button{flex:1;background:#2f4d24;color:#fff;box-shadow:none}.tabs button.on{background:#ffe066;color:#4a2c00}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.it{background:rgba(0,0,0,.25);border:2px solid rgba(255,255,255,.16);border-radius:12px;padding:12px}.it.eq{border-color:#ffe066}
+.it h3{font-size:16px}.it p{font-size:12.5px;opacity:.9;margin:5px 0}
+.st{display:flex;align-items:center;gap:6px;font-size:11.5px;margin:2px 0}.st span{width:60px}.st div{flex:1;height:6px;border-radius:3px;background:rgba(0,0,0,.4);overflow:hidden}.st i{display:block;height:100%;background:#9be06a}
+.pr{color:#ffe066;font-weight:800}.it button{width:100%;margin-top:7px;padding:7px}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:7px;border-bottom:1px solid rgba(255,255,255,.15);text-align:left}
+.q0{color:#e08a7a}.q1{color:#e6cd77}.q2{color:#9be06a}
+.note{font-size:12px;opacity:.75;margin-top:8px}
+</style>
+</head>
+<body>
+<div id="hud" class="hidden">
+  <div id="tl" class="pill"><div id="hName"></div><div class="bar"><i id="stBar"></i></div></div>
+  <div id="money">₾0</div>
+  <div id="cross"></div>
+  <div id="rl"><i></i></div>
+  <div id="prompt" class="pill"></div>
+  <div id="toasts"></div>
+  <div id="gear" class="pill"><div id="gName"></div><div id="shells"></div><div id="gAmmo"></div><div id="gDog" style="font-size:12.5px;opacity:.9;margin-top:3px"></div></div>
+</div>
+<div id="black"></div>
+
+<div id="title" class="screen">
+  <div class="card">
+    <h1>ნადირობა</h1>
+    <div class="sub">How to Hunt · 3D სანადირო სიმულატორი</div>
+    <input id="nameInput" type="text" maxlength="16" placeholder="შეიყვანე მონადირის სახელი" autocomplete="off">
+    <div class="row"><button id="bContinue" class="alt">გაგრძელება</button><button id="bNew">ახალი თამაში</button></div>
+    <div class="keys">
+      <div><b>WASD</b> სიარული</div><div><b>Shift</b> სირბილი</div>
+      <div><b>C</b> დაჯდომა (ჩუმად)</div><div><b>მაუსი</b> მიმოხედვა</div>
+      <div><b>მარცხენა</b> სროლა</div><div><b>მარჯვენა</b> თოფის მხარზე აღება</div>
+      <div><b>R</b> გატენვა</div><div><b>Q</b> ვაზნა: 10 ნომერი ⇄ კარტეჩი</div>
+      <div><b>1–5</b> თოფის არჩევა</div><div><b>E</b> მაღაზია / ნადირის აღება</div>
+      <div><b>F</b> ძაღლი: ძებნა ⇄ ფეხთან</div><div><b>Tab</b> ზურგჩანთა · <b>Esc</b> პაუზა</div>
+    </div>
+    <div class="note">პროგრესი ავტომატურად ინახება ბრაუზერში. ხმისთვის დააკლიკე „ახალი თამაში“ ან „გაგრძელება“. ვიბრაცია მუშაობს გეიმპადზე და ტელეფონზე.</div>
+  </div>
+</div>
+
+<div id="pause" class="screen hidden"><div class="card"><h2>პაუზა</h2><div class="sub">დააკლიკე და გააგრძელე ნადირობა</div><div class="row"><button id="bResume">გაგრძელება</button></div><div class="row"><button id="bQuit" class="alt">მთავარ მენიუში</button></div></div></div>
+
+<div id="shop" class="screen hidden">
+  <div class="card wide">
+    <div class="shead"><h2>მაღაზია</h2><div class="m" id="shMoney"></div><button id="shClose" class="alt">დახურვა (E)</button></div>
+    <div class="tabs"><button data-tab="guns" class="on">თოფები</button><button data-tab="ammo">ვაზნები</button><button data-tab="dogs">ძაღლები</button><button data-tab="sell">გაყიდვა</button></div>
+    <div id="shBody"></div>
+  </div>
+</div>
+<div id="inv" class="screen hidden"><div class="card"><h2>ზურგჩანთა</h2><div id="invBody"></div><div class="row"><button id="invClose" class="alt">დახურვა (Tab)</button></div></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* =====================================================================
+   ნადირობა — HOW TO HUNT (Three.js, single file)
+   1 DATA · 2 STATE · 3 WORLD · 4 AUDIO · 5 ANIMALS · 6 DOG
+   7 WEAPONS/PLAYER · 8 FLOW · 9 UI/SHOP · 10 LOOP
+   Game logic = plain numbers. Three.js objects are render output only.
+   ===================================================================== */
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const rand = (a, b) => a + Math.random() * (b - a);
+const randi = (a, b) => Math.floor(rand(a, b + 1));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const sstep = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
+function rng(s) { return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/* ---------------- 1 DATA ---------------- */
+const AMMO = {
+  bird: { key: 'bird', name: '10 ნომერი', pellets: 34, dmgSmall: 1.1, dmgLarge: 0.22, range: 32, price: 3, col: '#2f6fb3', desc: 'ფრინველისთვის და კურდღლისთვის. მსხვილ ნადირზე თითქმის უსარგებლოა.' },
+  buck: { key: 'buck', name: 'კარტეჩი', pellets: 9, dmgSmall: 3.2, dmgLarge: 9.5, range: 55, price: 9, col: '#b3382e', desc: 'მგლისა და ტურასთვის. პატარა ნადირს დაუნდობლად ფუჭავს.' }
+};
+const WEAP = [
+  { id: 'single', name: 'ერთლულიანი', price: 0,    cap: 1, delay: 0.45, reload: 1.4, spread: 0.040, pel: 1,    range: 1,    recoil: 1.0, semi: false, stats: [45, 50, 15, 25], desc: 'მარტივი და საიმედო საწყისი თოფი. ერთი ვაზნა — ერთი შანსი.' },
+  { id: 'dbl',    name: 'ორლულიანი', price: 380,  cap: 2, delay: 0.18, reload: 2.2, spread: 0.038, pel: 1,    range: 1.05, recoil: 1.1, semi: false, stats: [48, 52, 40, 60], desc: 'ორი სწრაფი გასროლა: ფრინველსაც და მეორე შანსსაც იძლევა.' },
+  { id: 'wide',   name: 'ფართოსაცემი', price: 620, cap: 2, delay: 0.20, reload: 2.3, spread: 0.075, pel: 1.5,  range: 0.8,  recoil: 1.0, semi: false, stats: [92, 40, 40, 55], desc: 'ფართო გაბნევა, 50%-ით მეტი ბირთვი — მფრინავ მწყერზე ძალიან პატიებადია.' },
+  { id: 'gt1',    name: 'თურქული GT1', price: 1500, cap: 5, delay: 0.28, reload: 3.0, spread: 0.040, pel: 1,   range: 1.1,  recoil: 0.9, semi: true,  stats: [45, 60, 85, 100], desc: 'ნახევრადავტომატი, 5 ვაზნა, სწრაფი განმეორებითი გასროლები.' },
+  { id: 'ou',     name: 'ზედა-ქვედა', price: 2800, cap: 2, delay: 0.20, reload: 2.0, spread: 0.022, pel: 1.15, range: 1.4,  recoil: 1.3, semi: false, stats: [16, 100, 55, 95], desc: 'პრემიუმ ლულები: მჭიდრო დაცემა და შორი მანძილი.' }
+];
+const WBY = Object.fromEntries(WEAP.map(w => [w.id, w]));
+const DOGS = [
+  { name: 'ეზოს ძაღლი', price: 0,    detect: 10, speed: 6.5, col: 0x8a6a42, col2: 0x5d452b, desc: 'ერთგული, მაგრამ ცუდად ყნოსავს — მხოლოდ ძალიან ახლოს პოულობს.' },
+  { name: 'ინგლისური სეტერი', price: 300, detect: 15, speed: 7.5, col: 0xe8e2d4, col2: 0xb8641e, desc: 'კლასიკური მწყრის ძაღლი, კარგი ყნოსვით.' },
+  { name: 'კურცჰაარი', price: 850, detect: 21, speed: 8.5, col: 0x6a4631, col2: 0x43291b, desc: 'სწრაფი, დაუღალავი, მტკიცედ დგას სტოიკაში.' },
+  { name: 'დრაჰტჰაარი', price: 1900, detect: 30, speed: 9.5, col: 0x4a3a2e, col2: 0x2d221a, desc: 'ჩემპიონი ყნოსვა — შორიდან გრძნობს ნადირს.' }
+];
+const SP = {
+  quail:    { name: 'მწყერი',        r: 0.22, h: 0.26, hp: 3,  cls: 'small', retr: true,  fly: true,  notice: 6.5, prime: 5,   fair: 9,   price: 15,  respawn: 35,  count: 24, biome: 'field',   call: 120 },
+  pheasant: { name: 'ხოხობი',        r: 0.30, h: 0.55, hp: 5,  cls: 'small', retr: true,  fly: true,  notice: 9,   prime: 5,   fair: 9,   price: 31,  respawn: 50,  count: 10, biome: 'thicket', call: 180 },
+  woodcock: { name: 'ტყის ქათამი',   r: 0.25, h: 0.32, hp: 4,  cls: 'small', retr: true,  fly: true,  notice: 7,   prime: 5,   fair: 9,   price: 27,  respawn: 45,  count: 10, biome: 'forest',  call: 140 },
+  rabbit:   { name: 'კურდღელი',      r: 0.30, h: 0.42, hp: 6,  cls: 'small', retr: true,  fly: false, notice: 9,   prime: 5,   fair: 9,   price: 23,  respawn: 40,  count: 14, biome: 'forest',  run: 9.5, walk: 0.8 },
+  jackal:   { name: 'ტურა',          r: 0.40, h: 0.70, hp: 28, cls: 'large', retr: false, fly: false, notice: 16,  prime: 1.9, fair: 3.2, price: 58,  respawn: 120, count: 5,  biome: 'forest',  run: 9,   walk: 1.3 },
+  wolf:     { name: 'მგელი',         r: 0.50, h: 0.95, hp: 75, cls: 'large', retr: false, fly: false, notice: 26,  prime: 1.9, fair: 3.2, price: 162, respawn: 260, count: 3,  biome: 'wolf',    run: 9.5, walk: 1.5 }
+};
+const QN = ['გაფუჭებული', 'საშუალო', 'უმაღლესი'], QM = [0.5, 0.8, 1];
+
+/* ---------------- 2 STATE ---------------- */
+const SAVE_KEY = 'nadiroba3d_save_v1';
+const newSave = n => ({ v: 1, name: n || 'მონადირე', money: 120, owned: ['single'], cur: 'single', ammoType: 'bird', reserve: { bird: 30, buck: 6 }, mags: { single: { n: 1, type: 'bird' } }, dogs: [0], dog: 0, inv: {}, demand: {}, stats: { kills: {}, shots: 0, hits: 0, earned: 0, play: 0 } });
+let S = newSave();
+function loadSave() { try { const j = localStorage.getItem(SAVE_KEY); if (!j) return null; const o = JSON.parse(j); return o && o.v === 1 ? Object.assign(newSave(o.name), o, { stats: Object.assign(newSave().stats, o.stats || {}) }) : null; } catch (e) { return null; } }
+function saveGame() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } }
+const curW = () => WBY[S.cur];
+const curMag = () => S.mags[S.cur] || (S.mags[S.cur] = { n: 0, type: 'bird' });
+const G = { state: 'title', t: 0, paused: false, saveT: 0, sleepT: 0 };
+const P = { x: 0, z: 250, y: 0, yaw: 0, pitch: 0, eye: 1.7, vx: 0, vz: 0, stam: 100, lock: false, ads: 0, cd: 0, reloading: false, reloadT: 0, reloadTot: 1, fireBuf: 0, recoil: 0, noise: 1, moving: false, sprint: false, crouch: false, phase: 0, stepD: 0, shake: 0, flash: 0, shotId: 0 };
+const keys = {}, mouse = { right: false };
+
+/* ---------------- 3 WORLD ---------------- */
+const cx = z => Math.sin(z * 0.011) * 9 + Math.sin(z * 0.027) * 3;            // road centre line
+const nz = (x, z) => Math.sin(x * .021 + 1) * Math.cos(z * .017) * 1.3 + Math.sin(x * .047 + z * .039) * .45;
+const HUBZ = 222, HX = cx(HUBZ);
+const heightAt = (x, z) => nz(x, z) * (1 - sstep(188, 204, z));
+const TH = { z: -185, rx: 62, rz: 70 };
+const inThicket = (x, z, m = 0) => { const a = (x - cx(z)) / (TH.rx + m), b = (z - TH.z) / (TH.rz + m); return a * a + b * b < 1 + nz(x * 2, z * 2) * 0.06; };
+function zone(x, z) {
+  if (inThicket(x, z)) return 'thicket';
+  const dx = x - cx(z);
+  if (z > 196 && Math.abs(dx) < 42) return Math.abs(dx) < 4.5 ? 'road' : 'verge';
+  if (Math.abs(dx) < 4.5) return 'road'; if (dx < -9) return 'forest'; if (dx > 9) return 'field'; return 'verge';
+}
+const LIM = 232;
+const CABIN = { x: HX - 22, z: HUBZ - 4, hw: 3.6, hd: 3.1 }, SHOPB = { x: HX + 22, z: HUBZ - 4, hw: 3.4, hd: 2.7 };
+const TRUCK = { x: HX + 8, z: HUBZ + 16, hw: 1.2, hd: 2.4 };
+const boxes = [CABIN, SHOPB, TRUCK].map(b => ({ x0: b.x - b.hw, x1: b.x + b.hw, z0: b.z - b.hd, z1: b.z + b.hd }));
+const CELL = 8, grid = new Map(), circles = [];
+function addCircle(x, z, r) { const c = { x, z, r }; circles.push(c); const k = Math.floor((x + 300) / CELL) * 200 + Math.floor((z + 300) / CELL); (grid.get(k) || grid.set(k, []).get(k)).push(c); }
+function blocked(x, z, r) {
+  for (const b of boxes) if (x > b.x0 - r && x < b.x1 + r && z > b.z0 - r && z < b.z1 + r) return true;
+  const ix = Math.floor((x + 300) / CELL), iz = Math.floor((z + 300) / CELL);
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const cell = grid.get((ix + a) * 200 + iz + b); if (cell) for (const c of cell) if (Math.hypot(x - c.x, z - c.z) < c.r + r) return true; }
+  return false;
+}
+function resolve(e) {
+  const ix = Math.floor((e.x + 300) / CELL), iz = Math.floor((e.z + 300) / CELL); e.hit = false;
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const cell = grid.get((ix + a) * 200 + iz + b); if (!cell) continue; for (const c of cell) { const d = Math.hypot(e.x - c.x, e.z - c.z), m = e.r + c.r; if (d < m && d > 0.001) { const k = (m - d) / d; e.x += (e.x - c.x) * k; e.z += (e.z - c.z) * k; e.hit = true; } } }
+  for (const bx of boxes) { const nx = clamp(e.x, bx.x0, bx.x1), nz2 = clamp(e.z, bx.z0, bx.z1), d = Math.hypot(e.x - nx, e.z - nz2); if (d < e.r) { if (d > 0.001) { const k = (e.r - d) / d; e.x += (e.x - nx) * k; e.z += (e.z - nz2) * k; } else e.z = bx.z1 + e.r; e.hit = true; } }
+  if (Math.abs(e.x) > LIM) { e.x = Math.sign(e.x) * LIM; e.hit = true; } if (Math.abs(e.z) > 252) { e.z = Math.sign(e.z) * 252; e.hit = true; }
+}
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75)); renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.insertBefore(renderer.domElement, document.body.firstChild);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xa6dcf5); scene.fog = new THREE.Fog(0xc4e6f2, 55, 270);
+const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.03, 420); camera.rotation.order = 'YXZ'; scene.add(camera);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x7aa05a, 0.95));
+const sun = new THREE.DirectionalLight(0xfff0c8, 0.9); sun.position.set(80, 120, 50); scene.add(sun);
+
+const matCache = {}; const mat = c => matCache[c] || (matCache[c] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.92, metalness: 0, flatShading: true }));
+const gIco = new THREE.IcosahedronGeometry(1, 0), gBox = new THREE.BoxGeometry(1, 1, 1);
+const gCone = new THREE.ConeGeometry(1, 1, 6); gCone.translate(0, 0.5, 0);
+const gCone7 = new THREE.ConeGeometry(1, 1, 7); gCone7.translate(0, 0.5, 0);
+const gCyl = new THREE.CylinderGeometry(1, 1, 1, 6); gCyl.translate(0, 0.5, 0);
+const gStick = new THREE.BoxGeometry(0.05, 0.05, 1);
+const gTuft = new THREE.ConeGeometry(0.6, 0.85, 5); gTuft.translate(0, 0.42, 0);
+const gFern = new THREE.ConeGeometry(0.4, 0.45, 5); gFern.translate(0, 0.22, 0);
+const dummy = new THREE.Object3D();
+function box(w, h, d, c, x, y, z, parent) { const m = new THREE.Mesh(gBox, mat(c)); m.scale.set(w, h, d); m.position.set(x, y, z); if (parent) parent.add(m); return m; }
+function ico(sx, sy, sz, c, x, y, z, p, rx, ry, rz) { const m = new THREE.Mesh(gIco, mat(c)); m.scale.set(sx, sy, sz); m.position.set(x, y, z); m.rotation.set(rx || 0, ry || 0, rz || 0); p.add(m); return m; }
+function cone(r, h, c, x, y, z, p, rx, ry, rz) { const m = new THREE.Mesh(gCone, mat(c)); m.scale.set(r, h, r); m.position.set(x, y, z); m.rotation.set(rx || 0, ry || 0, rz || 0); p.add(m); return m; }
+function inst(geo, list) {
+  const im = new THREE.InstancedMesh(geo, mat(0xffffff), list.length), col = new THREE.Color();
+  list.forEach((o, i) => { dummy.position.set(o.x, o.y, o.z); dummy.rotation.set(o.rx || 0, o.ry || 0, o.rz || 0); dummy.scale.set(o.sx, o.sy === undefined ? o.sx : o.sy, o.sz === undefined ? o.sx : o.sz); dummy.updateMatrix(); im.setMatrixAt(i, dummy.matrix); col.setHex(o.c); im.setColorAt(i, col); });
+  im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; im.frustumCulled = false; scene.add(im); return im;
+}
+function label(text, w, h, bg, fg) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 96; const g = c.getContext('2d');
+  g.fillStyle = bg; g.fillRect(0, 0, 256, 96); g.strokeStyle = fg; g.lineWidth = 6; g.strokeRect(4, 4, 248, 88); g.fillStyle = fg; g.font = 'bold 42px "Noto Sans Georgian",Sylfaen,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 50);
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) }));
+}
+
+function buildTerrain() {
+  const pos = [], col = [], step = 3, hash = rng(5);
+  const tri = (a, b, c) => {
+    const mx = (a[0] + b[0] + c[0]) / 3, mz = (a[2] + b[2] + c[2]) / 3, z = zone(mx, mz), j = (hash() - .5) * .07; let rgb;
+    if (z === 'road') rgb = [.78 + j, .68 + j, .5 + j]; else if (z === 'verge') rgb = [.5 + j, .72 + j, .32]; else if (z === 'forest') rgb = hash() < .18 ? [.4 + j, .34, .2] : [.27 + j, .45 + j, .22];
+    else if (z === 'field') rgb = hash() < .2 ? [.72 + j, .62 + j, .3] : [.84 + j, .74 + j, .4 + j]; else rgb = hash() < .3 ? [.42 + j, .32, .2] : [.6 + j, .48 + j, .28];
+    for (const v of [a, b, c]) { pos.push(v[0], v[1], v[2]); col.push(rgb[0], rgb[1], rgb[2]); }
+  };
+  for (let x = -250; x < 250; x += step) for (let z = -270; z < 270; z += step) {
+    const y = (xx, zz) => heightAt(xx, zz), a = [x, y(x, z), z], b = [x + step, y(x + step, z), z], c = [x, y(x, z + step), z + step], d = [x + step, y(x + step, z + step), z + step];
+    tri(a, c, b); tri(b, c, d);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3)); g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(col), 3)); g.computeVertexNormals();
+  scene.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true })));
+}
+const clouds = [];
+function buildSky() {
+  const r = rng(9);
+  for (let i = 0; i < 16; i++) { const g = new THREE.Group(); for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(gIco, new THREE.MeshBasicMaterial({ color: 0xffffff })); m.scale.set(10 + r() * 10, 5 + r() * 3, 8 + r() * 6); m.position.set(k * 11 - 16, r() * 3, r() * 6); g.add(m); } g.position.set(-300 + r() * 600, 110 + r() * 40, -300 + r() * 600); scene.add(g); clouds.push({ g, x: g.position.x, z: g.position.z, s: 1 + r() * 1.5 }); }
+}
+function buildNature() {
+  const r = rng(1234), trees = { trunk: [], cone: [], blob: [] }, rf = (a, b) => a + r() * (b - a);
+  let placed = 0;
+  for (let i = 0; i < 9000 && placed < 1500; i++) {
+    const z = rf(-252, 232), x = cx(z) - 12 - r() * r() * 215; if (x < -LIM) continue;
+    if (inThicket(x, z, 6) || (z > 188 && Math.abs(x - HX) < 48) || Math.sin(x * .03) * Math.sin(z * .025 + 1) > .72) continue;
+    const s = rf(.9, 1.6), pine = r() < .55, gr = [0x2c7a3f, 0x34914b, 0x246b38, 0x3f9a4f][Math.floor(r() * 4)];
+    if (pine) {
+      trees.trunk.push({ x, y: heightAt(x, z), z, sx: .2 * s, sy: 2.6 * s, c: 0x6a4a28 });
+      [[1.3, 2.3, 2.5], [2.3, 1.8, 2.1], [3.3, 1.2, 1.7]].forEach(([yy, rad, hh]) => trees.cone.push({ x, y: heightAt(x, z) + yy * s, z, sx: rad * s, sy: hh * s, sz: rad * s, c: gr }));
+    } else {
+      const birch = r() < .3; trees.trunk.push({ x, y: heightAt(x, z), z, sx: .22 * s, sy: 3.2 * s, c: birch ? 0xe9e4d6 : 0x70522d });
+      trees.blob.push({ x, y: heightAt(x, z) + 3.7 * s, z, sx: 2.3 * s, sy: 1.9 * s, sz: 2.3 * s, c: birch ? 0x8cc058 : gr, ry: r() * 3 }); trees.blob.push({ x: x + rf(-.5, .5), y: heightAt(x, z) + 4.7 * s, z: z + rf(-.5, .5), sx: 1.6 * s, sy: 1.4 * s, sz: 1.6 * s, c: birch ? 0xa2d26a : 0x3aa24f });
+    }
+    addCircle(x, z, 0.45); placed++;
+  }
+  inst(gCyl, trees.trunk); inst(gCone7, trees.cone); inst(gIco, trees.blob);
+  // ferns on the forest floor
+  const ferns = []; for (let i = 0; i < 4500; i++) { const z = rf(-252, 232), x = cx(z) - 11 - r() * 215; if (x < -LIM || inThicket(x, z) || (z > 188 && Math.abs(x - HX) < 48)) continue; ferns.push({ x, y: heightAt(x, z), z, sx: rf(.7, 1.3), sy: rf(.8, 1.4), c: pick([0x3f8a3a, 0x4f9a45, 0x6a9a3a, 0x8a7a3a]) }); } inst(gFern, ferns);
+  // knee-high dry grass in the fields
+  const tufts = [], hay = [];
+  for (let i = 0; i < 30000; i++) { const z = rf(-255, 250), x = cx(z) + 10 + r() * 222; if (x > LIM || inThicket(x, z, 4) || (z > 188 && Math.abs(x - HX) < 48)) continue; tufts.push({ x, y: heightAt(x, z), z, sx: rf(.9, 1.5), sy: rf(.85, 1.2), ry: r() * 3, c: pick([0xd9bd57, 0xc9a947, 0xe3cf7a, 0xb89a3c, 0x9fae4a, 0xcfb360]) }); }
+  inst(gTuft, tufts);
+  for (let i = 0; i < 26; i++) { const z = rf(-110, 180), x = cx(z) + rf(30, 200); hay.push({ x, y: heightAt(x, z), z, sx: 1.25, sy: 1.3, sz: 1.25, c: 0xd9b45a }); addCircle(x, z, 1.25); } inst(gCyl, hay);
+  // THICKET: dead trees, brambles, sticks, dry scrub
+  const dead = [], br = [], sticks = [], scrub = [], berries = [], tr = rng(4321), tf = (a, b) => a + tr() * (b - a);
+  const inT = () => { for (let k = 0; k < 40; k++) { const z = tf(TH.z - TH.rz, TH.z + TH.rz), x = cx(z) + tf(-TH.rx, TH.rx); if (inThicket(x, z)) return [x, z]; } return [cx(TH.z), TH.z]; };
+  for (let i = 0; i < 80; i++) {
+    const [x, z] = inT(), h = tf(3.5, 6), y0 = heightAt(x, z), lean = tf(-.18, .18);
+    dead.push({ x, y: y0, z, sx: tf(.1, .17), sy: h, c: 0x77695a, rz: lean, rx: tf(-.1, .1) }); addCircle(x, z, 0.35);
+    for (let k = 0; k < 5; k++) { const a = tf(0, 6.28), len = tf(1, 2.2), yy = y0 + h * tf(.45, .95); dead.push({ x, y: yy, z, sx: .035, sy: len, c: 0x7d6f5f, rx: Math.cos(a) * 1.05, rz: Math.sin(a) * 1.05 }); }
+  }
+  for (let i = 0; i < 260; i++) { const [x, z] = inT(), s = tf(.9, 1.8); br.push({ x, y: heightAt(x, z) + .3 * s, z, sx: s * 1.3, sy: s * .62, sz: s * 1.3, ry: tr() * 3, c: pick([0x5b4a2e, 0x6b5a35, 0x4a4a2a, 0x7a6a40, 0x58402e]) }); if (tr() < .5) addCircle(x, z, 0.0001); for (let k = 0; k < 3; k++) berries.push({ x: x + tf(-s, s), y: heightAt(x, z) + tf(.3, .😎 * s, z: z + tf(-s, s), sx: .08, c: pick([0x4a1a3a, 0x2a1a30, 0x7a1f3a]) }); }
+  for (let i = 0; i < 2000; i++) { const [x, z] = inT(); sticks.push({ x, y: heightAt(x, z) + tf(.05, .35), z, sx: 1, sy: 1, sz: tf(1, 2.4), rx: tf(-.5, .5), ry: tr() * 3.14, rz: tf(-.3, .3), c: pick([0x8a7a62, 0x6f6150, 0x9a8a6c, 0x7b6a52]) }); }
+  for (let i = 0; i < 900; i++) { const [x, z] = inT(); scrub.push({ x, y: heightAt(x, z), z, sx: tf(.8, 1.5), sy: tf(.7, 1.3), c: pick([0xb89a50, 0x9a8240, 0xc4a85a, 0x8a7a3a]) }); }
+  inst(gCyl, dead); inst(gIco, br); inst(gIco, berries); inst(gStick, sticks); inst(gTuft, scrub);
+}
+let fireMesh = null, fireLight = null;
+function buildHub() {
+  const c = new THREE.Group(); c.position.set(CABIN.x, 0, CABIN.z); scene.add(c);
+  box(7.2, 3.2, 6.2, 0x9a6a3a, 0, 1.6, 0, c); for (let y = .4; y < 3.2; y += .6) box(7.35, .08, 6.35, 0x6d4825, 0, y, 0, c);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(5.6, 2.4, 4), mat(0xb8472f)); roof.position.set(0, 4.4, 0); roof.rotation.y = Math.PI / 4; roof.scale.set(1.05, 1, .92); c.add(roof);
+  box(1.3, 2.2, .2, 0x5a3a1a, 0, 1.1, 3.15, c); box(1.1, .9, .12, 0xffe9a0, -2.2, 1.9, 3.15, c); box(1.1, .9, .12, 0xffe9a0, 2.2, 1.9, 3.15, c); box(1, 2.6, 1, 0x777777, 2.3, 4.6, -1.5, c); box(7.2, .2, 1.6, 0x7a5028, 0, .1, 4, c);
+  const s = new THREE.Group(); s.position.set(SHOPB.x, 0, SHOPB.z); scene.add(s);
+  box(6.6, 3, 5.2, 0xd9b36a, 0, 1.5, 0, s); box(7.2, .35, 5.8, 0x5aa0d0, 0, 3.15, 0, s);
+  for (let i = 0; i < 7; i++) box(1, .12, 2, i % 2 ? 0xffffff : 0xd8452b, -3 + i, 2.7, 3.7, s);
+  box(5, 1, 1, 0x7a4a20, 0, .5, 3.4, s); box(4.8, .12, 1.1, 0xc99a5a, 0, 1.05, 3.4, s);
+  const lb = label('მაღაზია', 3.2, 1.1, '#d8452b', '#fff'); lb.position.set(0, 3.95, 3.05); s.add(lb);
+  const t = new THREE.Group(); t.position.set(TRUCK.x, 0, TRUCK.z); scene.add(t);
+  box(2.2, .9, 4.8, 0x2f6fb3, 0, .9, 0, t); box(2, .9, 1.8, 0x2a5f9a, 0, 1.75, -.9, t); box(1.8, .4, 1.2, 0x9fd8f5, 0, 1.8, -1.55, t);
+  for (const [x, z] of [[-1, -1.5], [1, -1.5], [-1, 1.5], [1, 1.5]]) box(.35, .7, .7, 0x222222, x, .35, z, t);
+  const fx = HX, fz = HUBZ + 6; for (let i = 0; i < 8; i++) { const a = i / 8 * 6.28; box(.4, .3, .4, 0x888888, fx + Math.cos(a) * 1, .15, fz + Math.sin(a) * 1, scene); }
+  fireMesh = new THREE.Mesh(new THREE.ConeGeometry(.5, 1.1, 5), new THREE.MeshBasicMaterial({ color: 0xffa530 })); fireMesh.position.set(fx, .6, fz); scene.add(fireMesh);
+  fireLight = new THREE.PointLight(0xff9a3a, 1, 20); fireLight.position.set(fx, 1.4, fz); scene.add(fireLight);
+  const sg = label('გზა → ხოხობი ↑', 3.4, 1.2, '#7a4a20', '#ffe9a0'); sg.position.set(HX, 2.6, HUBZ - 22); scene.add(sg); box(.2, 3, .2, 0x5a3a1a, HX - 1.8, 1.5, HUBZ - 22.1, scene); box(.2, 3, .2, 0x5a3a1a, HX + 1.8, 1.5, HUBZ - 22.1, scene);
+}
+
+/* ---------------- 4 AUDIO ---------------- */
+const AU = {
+  ctx: null, master: null, revIn: null, echoIn: null, noise: null, vol: 0.8, muted: false,
+  on() { return this.ctx && !this.muted; },
+  init() {
+    if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+    const C = window.AudioContext || window.webkitAudioContext; if (!C) return; const c = this.ctx = new C();
+    const comp = c.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 5; this.master = c.createGain(); this.master.gain.value = this.vol; this.master.connect(comp); comp.connect(c.destination);
+    const len = Math.floor(c.sampleRate * 2.😎, ir = c.createBuffer(2, len, c.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
+    const conv = c.createConvolver(); conv.buffer = ir; this.revIn = c.createGain(); const rw = c.createGain(); rw.gain.value = 0.6; this.revIn.connect(conv); conv.connect(rw); rw.connect(this.master);
+    const dl = c.createDelay(1.5); dl.delayTime.value = 0.34; const fb = c.createGain(); fb.gain.value = 0.3, lp = this.filt('lowpass', 1500); this.echoIn = c.createGain(); this.echoIn.connect(dl); dl.connect(lp); lp.connect(fb); fb.connect(dl); const ew = c.createGain(); ew.gain.value = 0.5; lp.connect(ew); ew.connect(this.master);
+    const nb = c.createBuffer(1, c.sampleRate * 3, c.sampleRate), nd = nb.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1; this.noise = nb;
+    const s = c.createBufferSource(); s.buffer = nb; s.loop = true; const f = this.filt('bandpass', 420, 0.5), g = c.createGain(); g.gain.value = 0.045; const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = 0.12; lg.gain.value = 0.03; lfo.connect(lg); lg.connect(g.gain); lfo.start(); s.connect(f); f.connect(g); g.connect(this.master); s.start();
+  },
+  setMute(m) { this.muted = m; if (this.master) this.master.gain.value = m ? 0 : this.vol; },
+  filt(type, f, q = 1) { const b = this.ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; },
+  env(t, peak, att, dec) { const g = this.ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + att + dec); return g; },
+  nsrc(t, dur) { const s = this.ctx.createBufferSource(); s.buffer = this.noise; s.loop = true; s.start(t, Math.random() * 1.5); s.stop(t + dur + 0.05); return s; },
+  osc(type, f0, f1, t, dur) { const o = this.ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f0, t); if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur); o.start(t); o.stop(t + dur + 0.05); return o; },
+  route(vol, pan = 0, wet = 0.3, echo = 0) {
+    const c = this.ctx, g = c.createGain(); g.gain.value = vol; let last = g;
+    if (c.createStereoPanner) { const p = c.createStereoPanner(); p.pan.value = clamp(pan, -1, 1); g.connect(p); last = p; } last.connect(this.master);
+    if (wet > 0) { const s = c.createGain(); s.gain.value = wet; last.connect(s); s.connect(this.revIn); } if (echo > 0) { const s = c.createGain(); s.gain.value = echo; last.connect(s); s.connect(this.echoIn); } return g;
+  },
+  at(x, z, maxD) { const d = Math.hypot(x - P.x, z - P.z); if (d >= maxD) return null; const lat = (x - P.x) * Math.cos(P.yaw) - (z - P.z) * Math.sin(P.yaw); return { v: Math.pow(1 - d / maxD, 1.5), p: clamp(lat / 40, -1, 1), f: d / maxD }; }
+};
+const SND = {
+  shot(buck) {
+    if (!AU.on()) return; const c = AU.ctx, t = c.currentTime, o = AU.route(1, 0, 0.55, 0.6);
+    let n = AU.nsrc(t, 0.12), f = AU.filt('highpass', 1500), g = AU.env(t, 1.0, 0.001, 0.09); n.connect(f); f.connect(g); g.connect(o);                                // sharp crack
+    n = AU.nsrc(t, 0.7); f = AU.filt('lowpass', 7000); f.frequency.setValueAtTime(7000, t); f.frequency.exponentialRampToValueAtTime(200, t + 0.5); g = AU.env(t, 1.3, 0.002, 0.55); n.connect(f); f.connect(g); g.connect(o); // blast body
+    const s = AU.osc('sine', buck ? 120 : 150, 30, t, 0.34); g = AU.env(t, 1.5, 0.003, 0.32); s.connect(g); g.connect(o);                                         // chest thump
+    n = AU.nsrc(t, 1.0); f = AU.filt('lowpass', 170); g = AU.env(t, 0.9, 0.01, 0.9); n.connect(f); f.connect(g); g.connect(o);                                     // rumble tail
+  },
+  dry() { if (!AU.on()) return; const c = AU.ctx, t = c.currentTime, o = AU.route(0.5, 0, 0.1), n = AU.nsrc(t, .03), f = AU.filt('bandpass', 2400, 3), g = AU.env(t, .8, .001, .03); n.connect(f); f.connect(g); g.connect(o); },
+  reload(n, semi) {
+    if (!AU.on()) return; const c = AU.ctx, t = c.currentTime, o = AU.route(0.7, 0, 0.15, 0);
+    const click = (dt, f, vol = .8, dur = .04, type = 'bandpass') => { const nn = AU.nsrc(t + dt, dur), ff = AU.filt(type, f, 2), gg = AU.env(t + dt, vol, .001, dur); nn.connect(ff); ff.connect(gg); gg.connect(o); };
+    const thud = (dt, f) => { const s = AU.osc('triangle', f, f * .5, t + dt, .07), g = AU.env(t + dt, .5, .002, .07); s.connect(g); g.connect(o); };
+    if (semi) { click(0, 2200); click(.12, 1500, .6); for (let i = 0; i < n; i++) { thud(.35 + i * .3, 260); click(.35 + i * .3, 3000, .4, .02, 'highpass'); } click(.45 + n * .3, 1800, .9); click(.57 + n * .3, 2600, .9); }
+    else { click(0, 1400, .9); thud(.18, 200); for (let i = 0; i < n; i++) { thud(.5 + i * .18, 300); click(.5 + i * .18, 3200, .5, .02, 'highpass'); } click(.75 + n * .18, 1100, 1); click(.9 + n * .18, 2200, .7); }
+  },
+  call(x, z, maxD, base, build) { if (!AU.on()) return; const q = AU.at(x, z, maxD); if (!q) return; build(AU.ctx, AU.ctx.currentTime, AU.route(q.v * base, q.p, .15 + q.f * .6, q.f * .35)); },
+  wolf(x, z) { this.call(x, z, 420, .55, (c, t, o) => { for (const dt of [0, 12]) { const os = c.createOscillator(); os.type = 'sawtooth'; os.detune.value = dt; os.frequency.setValueAtTime(240, t); os.frequency.linearRampToValueAtTime(480, t + .9); os.frequency.linearRampToValueAtTime(450, t + 2.1); os.frequency.linearRampToValueAtTime(240, t + 3.4); const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = 5.5; lg.gain.value = 9; lfo.connect(lg); lg.connect(os.frequency); const lp = AU.filt('lowpass', 1100), g = c.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.32, t + .6); g.gain.linearRampToValueAtTime(.28, t + 2.3); g.gain.linearRampToValueAtTime(.0001, t + 3.5); os.connect(lp); lp.connect(g); g.connect(o); os.start(t); lfo.start(t); os.stop(t + 3.6); lfo.stop(t + 3.6); } }); },
+  jackal(x, z) { this.call(x, z, 260, .5, (c, t, o) => { for (let i = 0; i < 6; i++) { const tt = t + i * .17, s = AU.osc('sawtooth', 650, 1150, tt, .1), f = AU.filt('bandpass', 1300, 1.5), g = AU.env(tt, .35, .01, .12); s.connect(f); f.connect(g); g.connect(o); } const tt = t + 1.2, s = AU.osc('triangle', 800, 1300, tt, .9), g = AU.env(tt, .3, .1, .8); s.connect(g); g.connect(o); }); },
+  pheasant(x, z) { this.call(x, z, 190, .45, (c, t, o) => { const a = AU.osc('sawtooth', 900, 1500, t, .18), f = AU.filt('bandpass', 1600, 1.4), g = AU.env(t, .5, .01, .2); a.connect(f); f.connect(g); g.connect(o); const b = AU.osc('sawtooth', 1700, 1100, t + .22, .2), f2 = AU.filt('bandpass', 1500, 1.4), g2 = AU.env(t + .22, .55, .01, .22); b.connect(f2); f2.connect(g2); g2.connect(o); }); },
+  quail(x, z) { this.call(x, z, 130, .4, (c, t, o) => { [0, .17, .32].forEach((dt, i) => { const s = AU.osc('sine', 2200 + i * 150, 3300 + i * 200, t + dt, .09), g = AU.env(t + dt, .5, .01, .09); s.connect(g); g.connect(o); }); }); },
+  woodcock(x, z) { this.call(x, z, 150, .4, (c, t, o) => { for (let i = 0; i < 2; i++) { const tt = t + i * .35, s = AU.osc('sawtooth', 220, 150, tt, .22), f = AU.filt('lowpass', 700), g = AU.env(tt, .5, .02, .2); s.connect(f); f.connect(g); g.connect(o); } const s2 = AU.osc('sine', 3600, 3000, t + .8, .12), g2 = AU.env(t + .8, .3, .005, .1); s2.connect(g2); g2.connect(o); }); },
+  wings(x, z, big) { this.call(x, z, 150, big ? .7 : .5, (c, t, o) => { for (let i = 0; i < 9; i++) { const n = AU.nsrc(t + i * .05, .04), f = AU.filt('bandpass', 900 + i * 40, 1), g = AU.env(t + i * .05, .6 - i * .04, .003, .04); n.connect(f); f.connect(g); g.connect(o); } }); },
+  thump(x, z) { this.call(x, z, 80, .7, (c, t, o) => { const s = AU.osc('sine', 85, 50, t, .08), g = AU.env(t, .8, .002, .08); s.connect(g); g.connect(o); }); },
+  squeal(x, z) { this.call(x, z, 90, .5, (c, t, o) => { const s = AU.osc('triangle', 1800, 3600, t, .25), g = AU.env(t, .5, .01, .25); s.connect(g); g.connect(o); }); },
+  groan(x, z) { this.call(x, z, 120, .5, (c, t, o) => { const s = AU.osc('sawtooth', 220, 90, t, .5), f = AU.filt('lowpass', 500), g = AU.env(t, .5, .03, .45); s.connect(f); f.connect(g); g.connect(o); }); },
+  bark(x, z, soft) { this.call(x, z, 160, soft ? .35 : .6, (c, t, o) => { for (const dt of [0, .2]) { const s = AU.osc('sawtooth', 420, 190, t + dt, .11), f = AU.filt('lowpass', 2500), g = AU.env(t + dt, .7, .005, .1); s.connect(f); f.connect(g); g.connect(o); } }); },
+  whine(x, z) { this.call(x, z, 80, .35, (c, t, o) => { const s = AU.osc('sine', 700, 1100, t, .7), g = AU.env(t, .5, .05, .6); s.connect(g); g.connect(o); }); },
+  hit(x, z) { this.call(x, z, 120, .7, (c, t, o) => { const n = AU.nsrc(t, .08), f = AU.filt('lowpass', 500), g = AU.env(t, .8, .002, .07); n.connect(f); f.connect(g); g.connect(o); }); },
+  thud(x, z) { this.call(x, z, 90, .8, (c, t, o) => { const s = AU.osc('sine', 110, 45, t, .2), g = AU.env(t, .9, .003, .2); s.connect(g); g.connect(o); }); },
+  step(kind, quiet) {                                  // dry walking: gravel / leaves / dry grass / snapping sticks
+    if (!AU.on()) return; const c = AU.ctx, t = c.currentTime, v = (quiet ? .09 : .2) * rand(.8, 1.2), o = AU.route(v, rand(-.1, .1), .06);
+    const burst = (dt, ftype, f, dur, vol, q = 1) => { const n = AU.nsrc(t + dt, dur), ff = AU.filt(ftype, f, q), g = AU.env(t + dt, vol, .003, dur); n.connect(ff); ff.connect(g); g.connect(o); };
+    if (kind === 'road') { burst(0, 'highpass', rand(1100, 1700), .07, 1); burst(.03, 'bandpass', 2600, .05, .6, 2); }
+    else if (kind === 'forest') { burst(0, 'bandpass', rand(1500, 2300), .09, 1, .7); burst(.04, 'bandpass', rand(2400, 3400), .05, .5, 1.5); }
+    else if (kind === 'field') { burst(0, 'lowpass', rand(800, 1100), .16, 1); burst(.02, 'highpass', rand(2800, 4200), .12, .55); burst(.07, 'bandpass', 3400, .08, .4, 1.5); }
+    else if (kind === 'thicket') { burst(0, 'highpass', 2000, .06, .8); burst(.015, 'bandpass', rand(3200, 4800), .03, 1.1, 4); if (Math.random() < .45) { burst(.07, 'bandpass', rand(1800, 2600), .025, 1.3, 6); } }
+    else burst(0, 'lowpass', 900, .1, .8);
+  },
+  coin() { if (!AU.on()) return; const c = AU.ctx, t = c.currentTime, o = AU.route(.4, 0, .2); [1318, 1760].forEach((f, i) => { const s = AU.osc('sine', f, f, t + i * .08, .2), g = AU.env(t + i * .08, .5, .005, .18); s.connect(g); g.connect(o); }); },
+  click() { if (!AU.on()) return; const c = AU.ctx, t = c.currentTime, o = AU.route(.4, 0, .05), n = AU.nsrc(t, .03), f = AU.filt('bandpass', 1800, 2), g = AU.env(t, .7, .001, .03); n.connect(f); f.connect(g); g.connect(o); },
+  ping() { if (!AU.on()) return; const c = AU.ctx, t = c.currentTime, o = AU.route(.35, 0, .2), s = AU.osc('sine', 1568, 1568, t, .25), g = AU.env(t, .5, .005, .22); s.connect(g); g.connect(o); },
+  chirp(x, z) { this.call(x, z, 140, .18, (c, t, o) => { const k = randi(2, 4); for (let i = 0; i < k; i++) { const f0 = rand(2800, 4200), tt = t + i * .13, s = AU.osc('sine', f0, f0 * rand(.8, 1.3), tt, .08), g = AU.env(tt, .6, .005, .08); s.connect(g); g.connect(o); } }); },
+  cricket(x, z) { this.call(x, z, 100, .12, (c, t, o) => { const s = AU.osc('sine', 4300, 4300, t, .7), am = c.createOscillator(), ag = c.createGain(); am.frequency.value = 38; ag.gain.value = .5; const g = AU.env(t, .6, .05, .6); am.connect(ag); ag.connect(g.gain); am.start(t); am.stop(t + .8); s.connect(g); g.connect(o); }); }
+};
+function haptic(strong) {                                    // vibration on shooting (gamepad rumble + phones)
+  try { if (navigator.vibrate) navigator.vibrate(strong ? [45, 25, 70] : 30); } catch (e) { /* ignore */ }
+  try { const gps = navigator.getGamepads ? navigator.getGamepads() : []; for (const gp of gps) if (gp && gp.vibrationActuator && gp.vibrationActuator.playEffect) gp.vibrationActuator.playEffect('dual-rumble', { startDelay: 0, duration: strong ? 260 : 120, weakMagnitude: 0.9, strongMagnitude: 1 }).catch(() => {}); } catch (e) { /* ignore */ }
+}
+
+/* ---------------- 5 ANIMALS ---------------- */
+const animals = [], carcasses = [], pellets = [], parts = [], spawnQ = [];
+function leg(g, x, y, z, len, w, c) { const p = new THREE.Group(); p.position.set(x, y, z); box(w, len, w, c, 0, -len / 2, 0, p); g.add(p); return p; }
+function wingPair(g, y, len, c) {
+  const mk = s => { const p = new THREE.Group(); p.position.set(s * 0.08, y, 0); ico(len / 2, 0.015, len * .4, c, s * len / 2, 0, 0, p); p.visible = false; g.add(p); return p; };
+  return [mk(-1), mk(1)];
+}
+function makeAnimalMesh(kind) {
+  const g = new THREE.Group(), legs = []; let wings = [];
+  if (kind === 'wolf' || kind === 'jackal') {
+    const w = kind === 'wolf', k = w ? 1 : .72, B = w ? 0x9aa9b8 : 0xd9a441, L = w ? 0xc9d3dc : 0xf1e2bd, D = w ? 0x6e7a87 : 0xb8802c;
+    ico(.27 * k, .29 * k, .62 * k, B, 0, .7 * k, .05 * k, g); ico(.26 * k, .3 * k, .36 * k, L, 0, .68 * k, -.34 * k, g); ico(.2 * k, .19 * k, .24 * k, B, 0, .86 * k, -.82 * k, g);
+    cone(.09 * k, .3 * k, L, 0, .8 * k, -1.0 * k, g, -Math.PI / 2 + .1); ico(.04 * k, .035 * k, .04 * k, 0x111111, 0, .8 * k, -1.32 * k, g);
+    for (const s of [-1, 1]) { cone(.075 * k, .2 * k, B, s * .11 * k, .98 * k, -.74 * k, g, 0, 0, s * -.15); cone(.04 * k, .08 * k, 0x111111, s * .115 * k, 1.12 * k, -.74 * k, g, 0, 0, s * -.15); }
+    cone(.1 * k, .55 * k, w ? B : D, 0, .62 * k, .85 * k, g, 1.25); if (!w) cone(.07 * k, .15 * k, 0x222222, 0, .35 * k, 1.22 * k, g, 1.25);
+    for (const [x, z] of [[-.15, -.4], [.15, -.4], [-.15, .45], [.15, .45]]) legs.push(leg(g, x * k, .56 * k, z * k, .56 * k, .1 * k, D));
+  } else if (kind === 'rabbit') {
+    ico(.17, .17, .24, 0xaeaaa4, 0, .2, .02, g); ico(.14, .14, .2, 0x9a958c, 0, .22, .16, g); ico(.1, .1, .12, 0xb8b4ac, 0, .33, -.2, g);
+    for (const s of [-1, 1]) { cone(.04, .32, 0xb8b4ac, s * .05, .38, -.2, g, .25, 0, s * -.12); cone(.03, .07, 0x111111, s * .075, .69, -.14, g, .25, 0, s * -.12); ico(.014, .014, .014, 0x111111, s * .075, .35, -.3, g); }
+    ico(.06, .06, .06, 0xffffff, 0, .22, .36, g); for (const x of [-.07, .07]) legs.push(leg(g, x, .1, -.1, .1, .05, 0xf3f3f3)); for (const x of [-.1, .1]) legs.push(leg(g, x, .12, .14, .12, .06, 0x8a867e));
+  } else if (kind === 'woodcock') {
+    ico(.12, .11, .18, 0x8a6a45, 0, .17, 0, g); ico(.09, .02, .13, 0x4a3a28, 0, .26, .01, g); ico(.11, .1, .12, 0xb59a70, 0, .16, -.1, g); ico(.07, .07, .08, 0x9a7a52, 0, .25, -.16, g);
+    cone(.014, .17, 0xe0a8a0, 0, .21, -.29, g, -Math.PI / 2 - .25); ico(.012, .012, .012, 0x111111, .05, .27, -.19, g); ico(.012, .012, .012, 0x111111, -.05, .27, -.19, g);
+    for (const x of [-.04, .04]) legs.push(leg(g, x, .09, .02, .09, .02, 0xe0a8a0)); wings = wingPair(g, .2, .38, 0x7a5a38);
+  } else if (kind === 'pheasant') {
+    ico(.17, .15, .3, 0xa8571f, 0, .32, .02, g); ico(.15, .14, .2, 0x7a2f14, 0, .3, -.14, g); ico(.1, .04, .22, 0xc98a3a, 0, .44, .06, g); ico(.07, .1, .07, 0x1f6a4d, 0, .46, -.3, g); ico(.06, .06, .07, 0x1f6a4d, 0, .56, -.34, g);
+    ico(.04, .035, .03, 0xc0261b, 0, .55, -.4, g); ico(.065, .015, .06, 0xffffff, 0, .46, -.3, g); cone(.014, .06, 0xd4c070, 0, .55, -.44, g, -Math.PI / 2);
+    for (let i = 0; i < 3; i++) cone(.04 - i * .008, .8 - i * .1, i % 2 ? 0xb87a40 : 0x9a5a28, (i - 1) * .02, .3 + i * .01, .5 + 0.38, g, Math.PI / 2 + .12);
+    for (const x of [-.06, .06]) legs.push(leg(g, x, .2, .02, .2, .025, 0x8a8a8a)); wings = wingPair(g, .38, .6, 0x8a4a1c);
+  } else {
+    ico(.1, .09, .14, 0x9c7d56, 0, .12, 0, g); ico(.08, .07, .1, 0xc9b48a, 0, .1, -.05, g); ico(.06, .06, .07, 0x8a6a45, 0, .2, -.1, g); cone(.012, .08, 0x111111, 0, .27, -.08, g, -.5);
+    cone(.012, .03, 0xd4b070, 0, .2, -.17, g, -Math.PI / 2); for (const x of [-.03, .03]) legs.push(leg(g, x, .06, 0, .06, .02, 0xb08a5a)); wings = wingPair(g, .15, .26, 0x7d6140);
+  }
+  scene.add(g); return { g, legs, wings };
+}
+function randPos(kind, minD) {
+  const sp = SP[kind];
+  for (let i = 0; i < 80; i++) {
+    let x, z;
+    if (sp.biome === 'thicket') { z = rand(TH.z - TH.rz, TH.z + TH.rz); x = cx(z) + rand(-TH.rx, TH.rx); }
+    else if (sp.biome === 'forest') { z = rand(-250, 180); x = cx(z) - rand(16, 170); }
+    else if (sp.biome === 'wolf') { z = rand(-250, 100); x = cx(z) - rand(70, 225); }
+    else { z = rand(-250, 180); x = cx(z) + rand(14, 225); }
+    if (Math.abs(x) > LIM - 4) continue;
+    const zn = zone(x, z); if (sp.biome === 'thicket' ? zn !== 'thicket' : (sp.biome === 'field' ? zn !== 'field' : zn !== 'forest')) continue;
+    if (Math.hypot(x - P.x, z - P.z) < minD || blocked(x, z, sp.r)) continue; return { x, z };
+  } return null;
+}
+function spawnAnimal(kind, minD = 60, near) {
+  const sp = SP[kind]; let p = null;
+  if (near) for (let i = 0; i < 12 && !p; i++) { const a = rand(0, 6.28), d = rand(1.5, 6), x = near.x + Math.cos(a) * d, z = near.z + Math.sin(a) * d; if (zone(x, z) === 'field' && !blocked(x, z, sp.r)) p = { x, z }; }
+  if (!p) p = randPos(kind, minD); if (!p) return null;
+  const m = makeAnimalMesh(kind), a = { id: Math.random(), kind, sp, x: p.x, z: p.z, y: heightAt(p.x, p.z), alt: 0, dir: rand(0, 6.28), hp: sp.hp, dmg: 0, state: 'still', t: rand(2, 😎, fleeT: 0, ph: rand(0, 6), moving: false, pointed: false, g: m.g, legs: m.legs, wings: m.wings, flightT: 0, flightDur: 0, call: rand(5, 40), male: Math.random() < .5, lastShot: 0, hurt: false };
+  animals.push(a); return a;
+}
+function populate() {
+  for (const a of animals) scene.remove(a.g); for (const c of carcasses) scene.remove(c.g); animals.length = 0; carcasses.length = 0; spawnQ.length = 0;
+  for (const k of Object.keys(SP)) { if (k === 'quail') { let made = 0; while (made < SP.quail.count) { const c = randPos('quail', 40); if (!c) break; const n = Math.min(SP.quail.count - made, randi(3, 4)); for (let i = 0; i < n; i++) if (spawnAnimal('quail', 30, c)) made++; } } else for (let i = 0; i < SP[k].count; i++) spawnAnimal(k, 40); }
+}
+function startFlight(a) {
+  if (a.state === 'fly') return; a.state = 'fly'; a.flightT = 0; a.flightDur = rand(2.6, 4); a.pointed = false; a.ang = Math.atan2(a.z - P.z, a.x - P.x) + rand(-.9, .9);
+  SND.wings(a.x, a.z, a.kind !== 'quail'); if (a.kind === 'pheasant') SND.pheasant(a.x, a.z); else if (a.kind === 'woodcock') SND.woodcock(a.x, a.z); else SND.quail(a.x, a.z);
+  for (let i = 0; i < 4; i++) puff(a.x, a.y + .2, a.z, a.kind === 'pheasant' ? 0xb9763c : 0xc2a574, 1, 1.5, .06, 1.2, 1.5);
+}
+function flush(a) {
+  if (a.sp.fly) startFlight(a); else if (a.state !== 'flee') { a.state = 'flee'; a.fleeT = rand(4, 7); a.dir = Math.atan2(a.z - P.z, a.x - P.x) + rand(-.6, .6); a.pointed = false; if (a.kind === 'rabbit') SND.thump(a.x, a.z); }
+}
+function moveAnimal(a, dir, sp, dt) {
+  const nx = a.x + Math.cos(dir) * sp * dt, nz2 = a.z + Math.sin(dir) * sp * dt, zn = zone(nx, nz2), b = a.sp.biome;
+  const ok = !blocked(nx, nz2, a.sp.r) && Math.abs(nx) < LIM && Math.abs(nz2) < 250 && (b === 'thicket' ? zn === 'thicket' || a.state === 'flee' : b === 'field' ? zn === 'field' : zn !== 'field' && zn !== 'road' || a.state === 'flee');
+  if (ok) { a.x = nx; a.z = nz2; a.moving = sp > .1; return true; } a.dir += (Math.random() < .5 ? 1 : -1) * rand(1.2, 2.4); return false;
+}
+function updateAnimals(dt) {
+  for (let i = animals.length - 1; i >= 0; i--) {
+    const a = animals[i], sp = a.sp, dp = Math.hypot(a.x - P.x, a.z - P.z); a.moving = false; a.g.visible = dp < 150;
+    if (a.hurt && a.state !== 'fly') { a.hp -= (sp.cls === 'large' ? 1.2 : 0.4) * dt; if (a.hp <= 0) { killAnimal(a); continue; } }
+    if (dp > 230 && a.state === 'still') continue;
+    a.call -= dt; if (a.call <= 0) { a.call = rand(15, 50); if (a.kind === 'wolf') { a.call = rand(40, 90); SND.wolf(a.x, a.z); } else if (a.kind === 'jackal') SND.jackal(a.x, a.z); else if (a.kind === 'pheasant') SND.pheasant(a.x, a.z); else if (a.kind === 'quail') SND.quail(a.x, a.z); else if (a.kind === 'woodcock') SND.woodcock(a.x, a.z); }
+    const rad = sp.notice * P.noise;
+    if (a.state === 'still') {
+      a.t -= dt; if (dp < rad) flush(a);
+      else if ((a.kind === 'jackal' || a.kind === 'wolf' || a.kind === 'rabbit') && a.t <= 0) { a.state = 'wander'; a.t = rand(3, 7); a.dir = rand(0, 6.28); }
+    } else if (a.state === 'wander') { a.t -= dt; moveAnimal(a, a.dir, sp.walk, dt); if (dp < rad) flush(a); else if (a.t <= 0) { a.state = 'still'; a.t = rand(4, 10); } }
+    else if (a.state === 'flee') {
+      a.fleeT -= dt; if (Math.random() < dt * 1.2) a.dir = Math.atan2(a.z - P.z, a.x - P.x) + rand(-.8, .8); if (a.kind === 'rabbit') a.dir += Math.sin(G.t * 9 + a.ph) * 0.05;
+      moveAnimal(a, a.dir, sp.run * (a.hurt ? .7 : 1), dt); if (a.fleeT <= 0 && dp > rad * 1.4) { a.state = 'still'; a.t = rand(4, 9); }
+    } else if (a.state === 'fly') {
+      a.flightT += dt; const T = a.flightDur, u = a.flightT; a.alt = Math.min(6, u * 14); if (u > T - .7) a.alt = Math.max(0, 6 * (T - u) / .7);
+      const nx = a.x + Math.cos(a.ang) * 14 * dt, nz2 = a.z + Math.sin(a.ang) * 14 * dt;
+      if (Math.abs(nx) > LIM - 6 || Math.abs(nz2) > 245 || (sp.biome === 'field' && zone(nx, nz2) !== 'field' && zone(nx, nz2) !== 'verge') ) a.ang += Math.PI * .6; else { a.x = nx; a.z = nz2; }
+      a.moving = true; if (u >= T) { a.state = 'still'; a.alt = 0; a.t = rand(5, 12); resolve({ x: a.x, z: a.z, r: .3 }); }
+    }
+    a.y = heightAt(a.x, a.z); a.ph += dt * (a.state === 'flee' ? 16 : 7); const flying = a.state === 'fly';
+    a.g.position.set(a.x, a.y + a.alt, a.z); a.g.rotation.y = Math.atan2(-Math.cos(a.state === 'fly' ? a.ang : a.dir), -Math.sin(a.state === 'fly' ? a.ang : a.dir));
+    const sw = a.moving && !flying ? Math.sin(a.ph) * .7 : 0; a.legs.forEach((l, k) => { l.rotation.x = k % 2 ? -sw : sw; l.visible = !flying; });
+    if (a.kind === 'rabbit' && a.state === 'flee') a.g.position.y += Math.abs(Math.sin(a.ph * .9)) * .35;
+    a.wings.forEach((w, k) => { w.visible = flying; if (flying) w.rotation.z = (k ? 1 : -1) * Math.sin(G.t * 38 + a.ph) * 0.9; });
+  }
+  for (let i = carcasses.length - 1; i >= 0; i--) { const c = carcasses[i]; c.t += dt; if (c.alt > 0 && !c.carried) { c.vy -= 18 * dt; c.alt = Math.max(0, c.alt + c.vy * dt); if (c.alt === 0) SND.thud(c.x, c.z); c.g.position.set(c.x, c.y + c.alt + .1, c.z); } if (c.t > 420 && !c.carried) { scene.remove(c.g); carcasses.splice(i, 1); } }
+  for (let i = spawnQ.length - 1; i >= 0; i--) { spawnQ[i].t -= dt; if (spawnQ[i].t <= 0) { let near = null; if (spawnQ[i].kind === 'quail') { const h = animals.filter(a => a.kind === 'quail' && a.state === 'still'); if (h.length && Math.random() < .7) near = pick(h); } if (spawnAnimal(spawnQ[i].kind, 60, near)) spawnQ.splice(i, 1); else spawnQ[i].t = 5; } }
+}
+function killAnimal(a) {
+  const sp = a.sp, i = animals.indexOf(a); if (i >= 0) animals.splice(i, 1);
+  const q = a.dmg <= sp.hp * sp.prime ? 2 : a.dmg <= sp.hp * sp.fair ? 1 : 0;
+  a.g.rotation.z = Math.PI / 2; a.legs.forEach(l => { l.visible = true; l.rotation.x = 0; }); a.wings.forEach(w => { w.visible = false; });
+  carcasses.push({ kind: a.kind, sp, x: a.x, z: a.z, y: a.y, alt: a.alt, vy: 0, q, male: a.male, g: a.g, t: 0, carried: false });
+  a.g.position.set(a.x, a.y + a.alt + .1, a.z); if (carcasses.length > 40) { const o = carcasses.shift(); scene.remove(o.g); }
+  S.stats.kills[a.kind] = (S.stats.kills[a.kind] || 0) + 1; spawnQ.push({ kind: a.kind, t: sp.respawn + rand(0, 25) });
+  puff(a.x, a.y + .3 + a.alt, a.z, 0x8a1a1a, 5, 1.5, .06, .5, 6); toast(${sp.name} — ${QN[q]}, q === 2 ? 'good' : q === 1 ? 'gold' : 'bad');
+  toast(sp.retr ? 'ძაღლი მოგიტანს — ან დააჭირე E' : 'მიდი და დააჭირე E ნადირის ასაღებად', 'good');
+}
+function nearestCarcass() { let best = null, bd = 3.8; for (const c of carcasses) { if (c.carried || c.alt > .3) continue; const d = Math.hypot(c.x - P.x, c.z - P.z); if (d < bd) { bd = d; best = c; } } return best; }
+function collect(c, byDog) {
+  const i = carcasses.indexOf(c); if (i >= 0) carcasses.splice(i, 1); scene.remove(c.g); const k = c.kind + '|' + c.q; S.inv[k] = (S.inv[k] || 0) + 1;
+  toast(+ ${c.sp.name} (${QN[c.q]}) · ~₾${Math.round(c.sp.price * QM[c.q])}, 'good'); SND.click(); if (byDog) SND.bark(P.x, P.z, true); saveGame();
+}
+function puff(x, y, z, color, n, sp, size, life, grav) { for (let i = 0; i < n; i++) { if (parts.length > 220) break; const m = box(size, size, size, color, x, y, z, scene); parts.push({ m, x, y, z, vx: rand(-sp, sp), vy: rand(0, sp), vz: rand(-sp, sp), life, g: grav === undefined ? 9 : grav }); } }
+function updateParts(dt) { for (let i = parts.length - 1; i >= 0; i--) { const p = parts[i]; p.life -= dt; if (p.life <= 0) { scene.remove(p.m); parts.splice(i, 1); continue; } p.vy -= p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; p.m.position.set(p.x, p.y, p.z); } }
+function noiseEvent(R) {
+  for (const a of animals) { const d = Math.hypot(a.x - P.x, a.z - P.z); if (d > R || a.state === 'fly') continue; if (a.sp.fly) { if (d < 45 && a.state === 'still') startFlight(a); } else if (a.state !== 'flee') flush(a); }
+}
+function updatePellets(dt) {
+  const near = animals.filter(a => Math.hypot(a.x - P.x, a.z - P.z) < 90 && a.state !== 'prefly');
+  for (let i = pellets.length - 1; i >= 0; i--) {
+    const p = pellets[i], ox = p.x, oy = p.y, oz = p.z; p.vy -= 5 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; p.d += Math.hypot(p.vx, p.vy, p.vz) * dt;
+    let dead = p.d > p.eff * 1.25;
+    if (!dead) for (let k = 1; k <= 3 && !dead; k++) { const f = k / 3, qx = ox + (p.x - ox) * f, qz = oz + (p.z - oz) * f, qy = oy + (p.y - oy) * f; if (qy < heightAt(qx, qz) + .02) { dead = true; if (Math.random() < .2) puff(qx, qy, qz, 0xc9b27a, 1, 1, .05, .3); } else if (qy < 5 && blocked(qx, qz, 0)) dead = true; }
+    if (!dead) for (const a of near) {
+      if (!animals.includes(a)) continue; const dx = p.x - ox, dz = p.z - oz, l2 = dx * dx + dz * dz || 1; const t = clamp(((a.x - ox) * dx + (a.z - oz) * dz) / l2, 0, 1), px = ox + dx * t, pz = oz + dz * t, py = oy + (p.y - oy) * t, base = a.y + a.alt;
+      if (Math.hypot(px - a.x, pz - a.z) < a.sp.r + .1 && py > base - .05 && py < base + a.sp.h + .05) { hitAnimal(a, p, px, py, pz); dead = true; break; }
+    }
+    if (dead) pellets.splice(i, 1);
+  }
+}
+function hitAnimal(a, p, px, py, pz) {
+  const sp = a.sp, am = AMMO[p.type], f = p.d / p.eff, scale = f < .45 ? 1 : clamp(lerp(1, .25, (f - .45) / .6), .25, 1), dmg = (sp.cls === 'small' ? am.dmgSmall : am.dmgLarge) * scale;
+  a.hp -= dmg; a.dmg += dmg; puff(px, py, pz, 0x8a1a1a, 1, 1, .035, .4, 5);
+  if (a.kind === 'quail' || a.kind === 'pheasant' || a.kind === 'woodcock') { if (Math.random() < .4) puff(a.x, py, a.z, a.kind === 'pheasant' ? 0xb9763c : 0xc2a574, 1, 1.2, .07, 1.4, 1); }
+  if (a.lastShot !== p.shot) {
+    a.lastShot = p.shot; S.stats.hits++; a.hurt = true; SND.hit(a.x, a.z); if (a.kind === 'rabbit') SND.squeal(a.x, a.z); else if (sp.cls === 'large') SND.groan(a.x, a.z);
+    if (a.state === 'still' || a.state === 'wander') { if (sp.fly) { startFlight(a); a.flightT = Math.max(a.flightT, .4); } else flush(a); }
+  }
+  if (a.hp <= 0) killAnimal(a);
+}
+
+/* ---------------- 6 DOG ---------------- */
+const D = { x: HX - 3, z: 244, y: 0, r: .45, ang: -Math.PI / 2, state: 'heel', t: 0, tgt: null, carry: null, pq: null, pointT: 0, timer: 0, phase: 0, moving: false, pointCool: 0, barkCool: 0, mode: 'search', stuck: 0, g: null, legs: [], tail: null, sprite: null, hit: false, builtFor: -1, front: null };
+function buildDog() {
+  if (D.g) scene.remove(D.g); const dd = DOGS[S.dog], g = new THREE.Group(); D.legs = [];
+  ico(.2, .22, .46, dd.col, 0, .58, 0, g); ico(.19, .21, .3, dd.col, 0, .6, -.25, g); ico(.1, .1, .12, dd.col2, .06, .64, .1, g); ico(.14, .14, .2, dd.col, 0, .82, -.58, g); ico(.07, .07, .14, dd.col, 0, .76, -.8, g); ico(.025, .025, .025, 0x111111, 0, .8, -.93, g);
+  for (const s of [-1, 1]) { ico(.04, .12, .08, dd.col2, s * .13, .78, -.55, g, 0, 0, s * .25); ico(.015, .015, .015, 0x111111, s * .06, .88, -.7, g); }
+  D.tail = new THREE.Group(); D.tail.position.set(0, .66, .46); cone(.04, .38, dd.col2, 0, 0, 0, D.tail, Math.PI / 2 + .6); g.add(D.tail);
+  for (const [x, z] of [[-.12, -.3], [.12, -.3], [-.12, .32], [.12, .32]]) D.legs.push(leg(g, x, .46, z, .46, .08, dd.col2));
+  D.g = g; scene.add(g);
+  if (!D.sprite) { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); x.fillStyle = '#ffd866'; x.strokeStyle = '#7a5a10'; x.lineWidth = 4; x.beginPath(); x.arc(32, 32, 28, 0, 7); x.fill(); x.stroke(); x.fillStyle = '#a02010'; x.font = 'bold 44px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('!', 32, 35); D.sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false })); D.sprite.scale.set(1.1, 1.1, 1); D.sprite.visible = false; scene.add(D.sprite); }
+  D.builtFor = S.dog;
+}
+function updateDog(dt) {
+  if (D.builtFor !== S.dog) buildDog();
+  const dd = DOGS[S.dog], d = D; d.t += dt; d.pointCool -= dt; d.barkCool -= dt; const dpl = Math.hypot(d.x - P.x, d.z - P.z);
+  if (dpl > 150) { d.x = P.x + 3; d.z = P.z + 3; d.state = 'heel'; if (d.carry) { d.carry.carried = false; d.carry = null; } }
+  const free = d.state === 'heel' || d.state === 'search' || d.state === 'roam';
+  if (free) { let best = null, bd = 80; for (const c of carcasses) { if (!c.sp.retr || c.carried || c.alt > .3) continue; const dd2 = Math.hypot(c.x - d.x, c.z - d.z); if (dd2 < bd) { bd = dd2; best = c; } } if (best) { d.tgt = best; d.state = 'retrieve'; } }
+  if (free && d.pointCool <= 0) for (const a of animals) { if (a.state !== 'still' || a.pointed) continue; if (Math.hypot(a.x - d.x, a.z - d.z) < dd.detect) { d.state = 'point'; d.pq = a; d.pointT = 0; a.pointed = true; SND.ping(); SND.whine(d.x, d.z); break; } }
+  if (free && d.barkCool <= 0) for (const a of animals) if ((a.kind === 'wolf' || a.kind === 'jackal') && Math.hypot(a.x - d.x, a.z - d.z) < 40) { d.barkCool = 8; SND.bark(d.x, d.z); break; }
+  let tx = P.x, tz = P.z, spd = 0; const zn = zone(P.x, P.z);
+  if (free) d.state = d.mode === 'search' && (zn === 'field' || zn === 'forest' || zn === 'thicket') ? 'search' : 'heel';
+  const hd = Math.atan2(-Math.cos(P.yaw), -Math.sin(P.yaw)) * 0 + (P.yaw - Math.PI / 2) * -1, fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw); void hd;
+  switch (d.state) {
+    case 'heel': tx = P.x - fx * 2.5 + rx * 1.5; tz = P.z - fz * 2.5 + rz * 1.5; spd = Math.min(dd.speed, Math.hypot(tx - d.x, tz - d.z) * 3); break;
+    case 'search': { const side = Math.sin(d.t * .7) * (10 + dd.detect * .6), ahead = 8 + Math.sin(d.t * .4) * 5 + dd.detect * .3; tx = P.x + fx * ahead + rx * side; tz = P.z + fz * ahead + rz * side; spd = Math.min(dd.speed, Math.hypot(tx - d.x, tz - d.z) * 3); break; }
+    case 'point': {
+      spd = 0; d.moving = false; d.pointT += dt; const q = d.pq;
+      if (!q || q.state !== 'still' || !animals.includes(q)) { d.state = 'watch'; d.timer = 1.2; break; }
+      d.ang += angDiff(d.ang, Math.atan2(q.z - d.z, q.x - d.x)) * Math.min(1, dt * 10);
+      if (d.pointT >= 5) { for (const o of animals) if (o.kind === q.kind && o.state === 'still' && Math.hypot(o.x - q.x, o.z - q.z) < 7) flush(o); d.state = 'watch'; d.timer = 1.6; SND.bark(d.x, d.z, true); }
+      break;
+    }
+    case 'watch': spd = 0; d.moving = false; d.timer -= dt; d.pointCool = 2; if (d.timer <= 0) d.state = 'heel'; break;
+    case 'retrieve': { const c = d.tgt; if (!c || !carcasses.includes(c) || c.carried) { d.state = 'heel'; break; } tx = c.x; tz = c.z; spd = dd.speed; if (Math.hypot(d.x - c.x, d.z - c.z) < 1) { c.carried = true; d.carry = c; d.state = 'return'; } break; }
+    case 'return': { tx = P.x; tz = P.z; spd = dd.speed; const c = d.carry; if (c) { c.x = d.x - Math.sin(d.ang + Math.PI / 2) * 0; c.x = d.x + Math.cos(d.ang) * .75; c.z = d.z + Math.sin(d.ang) * .75; c.g.position.set(c.x, d.y + .65, c.z); c.g.rotation.y = Math.atan2(-Math.cos(d.ang), -Math.sin(d.ang)); c.g.rotation.z = 0; } if (Math.hypot(d.x - P.x, d.z - P.z) < 2.4) { if (c) collect(c, true); d.carry = null; d.state = 'heel'; d.pointCool = 1.5; } break; }
+  }
+  if (spd > 0) { const ta = Math.atan2(tz - d.z, tx - d.x); d.ang += angDiff(d.ang, ta) * Math.min(1, dt * 9); d.x += Math.cos(d.ang) * spd * dt; d.z += Math.sin(d.ang) * spd * dt; resolve(d); d.moving = spd > .5; d.phase += spd * dt * 1.6; d.stuck = d.hit ? d.stuck + dt : 0; if (d.stuck > .5) { d.ang += rand(-1.5, 1.5); d.stuck = 0; } } else if (d.state !== 'point') d.moving = false;
+  d.y = heightAt(d.x, d.z);
+  const pt = d.state === 'point'; d.g.position.set(d.x, d.y, d.z); d.g.rotation.y = Math.atan2(-Math.cos(d.ang), -Math.sin(d.ang)); d.g.rotation.x = pt ? .08 : 0;
+  d.legs.forEach((l, k) => { l.rotation.x = pt ? (k === 0 ? -1.2 : 0) : (d.moving ? Math.sin(d.phase + (k % 2 ? Math.PI : 0)) * .8 : 0); });
+  d.tail.rotation.x = pt ? -.6 : Math.sin(G.t * 12) * .35; d.tail.rotation.z = pt ? 0 : Math.sin(G.t * 12) * .5;
+  d.sprite.visible = pt && d.pointT < 3; d.sprite.position.set(d.x, d.y + 2 + Math.sin(G.t * 9) * .08, d.z);
+}
+
+/* ---------------- 7 WEAPONS / PLAYER ---------------- */
+const vm = new THREE.Group(); camera.add(vm); let vmId = '';
+function buildVM() {
+  if (vmId === S.cur) return; vmId = S.cur; while (vm.children && vm.children.length) vm.remove(vm.children[0]);
+  const w = curW(), wood = 0x8a5a2b, wood2 = 0x6a3f1c, steel = 0x2b3036, silver = 0xb9bec3, L = .78;
+  const cyl = (r, len, c, x, y, z, rt) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt === undefined ? r : rt, r, len, 10), mat(c)); m.rotation.x = Math.PI / 2; m.position.set(x, y, z); vm.add(m); return m; };
+  const zc = -.16 - L / 2;
+  if (w.id === 'ou') { cyl(.0165, L, steel, 0, .0165, zc); cyl(.0165, L, steel, 0, -.0165, zc); box(.014, .006, L, 0x444a50, 0, .036, zc, vm); box(.062, .07, .15, silver, 0, -.004, -.1, vm); box(.05, .045, .26, wood2, 0, -.034, -.42, vm); box(.05, .1, .34, wood, 0, -.045, .12, vm); }
+  else if (w.id === 'dbl' || w.id === 'wide') { cyl(.0165, L, steel, -.0175, 0, zc, w.id === 'wide' ? .021 : undefined); cyl(.0165, L, steel, .0175, 0, zc, w.id === 'wide' ? .021 : undefined); box(.04, .006, L, 0x444a50, 0, .019, zc, vm); box(.075, .06, .14, 0x3a3f45, 0, -.004, -.1, vm); box(.055, .04, .26, wood2, 0, -.032, -.42, vm); box(.05, .1, .34, wood, 0, -.045, .12, vm); }
+  else if (w.id === 'gt1') { cyl(.016, L, steel, 0, .004, zc); box(.014, .008, L, 0x111111, 0, .024, zc, vm); box(.064, .075, .26, 0x55595e, 0, -.01, -.06, vm); box(.05, .035, .3, 0x1a1c1e, 0, -.032, -.46, vm); box(.052, .1, .34, 0x1a1c1e, 0, -.045, .17, vm); box(.054, .012, .3, 0xd9651b, 0, -.0, .17, vm); }
+  else { cyl(.015, L, steel, 0, 0, zc); box(.04, .05, .12, 0x3a3f45, 0, -.01, -.1, vm); box(.045, .035, .22, wood, 0, -.03, -.4, vm); box(.05, .1, .34, wood, 0, -.045, .12, vm); }
+  const bead = new THREE.Mesh(gIco, mat(0xffd36b)); bead.scale.set(.0055, .0055, .0055); bead.position.set(0, w.id === 'ou' ? .042 : w.id === 'gt1' ? .03 : w.id === 'dbl' || w.id === 'wide' ? .024 : .02, -.16 - L); vm.add(bead);
+  box(.06, .05, .12, 0xd9a97c, 0, -.075, -.5, vm); box(.05, .06, .09, 0xd9a97c, .0, -.09, .0, vm);
+}
+function muzzleWorld() { const f = fwd(); return { x: P.x + f[0] * .9, y: P.y + P.eye - .05 + f[1] * .9, z: P.z + f[2] * .9 }; }
+function fwd(yaw = P.yaw, pitch = P.pitch) { const cp = Math.cos(pitch); return [-Math.sin(yaw) * cp, Math.sin(pitch), -Math.cos(yaw) * cp]; }
+function canReload() { const w = curW(), m = curMag(); if (P.reloading) return false; if (m.type === S.ammoType && m.n >= w.cap) return false; return S.reserve[S.ammoType] > 0; }
+function startReload() { if (!canReload()) return false; const w = curW(), m = curMag(), same = m.type === S.ammoType, need = Math.min(w.cap - (same ? m.n : 0), S.reserve[S.ammoType]); P.reloading = true; P.reloadTot = P.reloadT = w.reload * (.5 + .5 * need / w.cap); SND.reload(need, w.semi); return true; }
+function finishReload() { const w = curW(), m = curMag(); P.reloading = false; if (m.type !== S.ammoType) { S.reserve[m.type] += m.n; m.n = 0; m.type = S.ammoType; } const need = Math.min(w.cap - m.n, S.reserve[S.ammoType]); m.n += need; S.reserve[S.ammoType] -= need; }
+function switchWeapon(i) { const w = WEAP[i]; if (!w) return; if (!S.owned.includes(w.id)) { toast('ეს თოფი ჯერ არ გაქვს — იყიდე მაღაზიაში', 'bad'); return; } if (S.cur === w.id) return; S.cur = w.id; P.reloading = false; P.cd = .35; curMag(); SND.click(); buildVM(); toast(w.name); }
+function shoot() {
+  const w = curW(), m = curMag(), am = AMMO[m.type]; m.n--; S.stats.shots++; P.cd = w.delay; P.shotId++;
+  const spread = w.spread * (P.ads > .6 ? .75 : 1.6) * (P.moving ? 1.25 : 1) * (P.crouch ? .85 : 1), n = Math.round(am.pellets * w.pel), eff = am.range * w.range, o = muzzleWorld();
+  for (let i = 0; i < n; i++) { const lat = (Math.random() + Math.random() - 1) * spread * 1.2, ver = (Math.random() + Math.random() - 1) * spread * 1.2, f = fwd(P.yaw + lat, P.pitch + ver), sp = rand(330, 400); pellets.push({ x: o.x, y: o.y, z: o.z, vx: f[0] * sp, vy: f[1] * sp, vz: f[2] * sp, d: 0, type: m.type, eff, shot: P.shotId }); }
+  P.recoil = w.recoil; P.flash = .08; P.shake = Math.max(P.shake, .9 * w.recoil); P.pitch += .035 * w.recoil; P.yaw += rand(-.008, .008);
+  for (let i = 0; i < 7; i++) { const f = fwd(); puff(o.x, o.y, o.z, 0xdddddd, 1, 1.2, rand(.08, .16), rand(.7, 1.3), -.2); parts[parts.length - 1] && (parts[parts.length - 1].vx += f[0] * 3, parts[parts.length - 1].vz += f[2] * 3); }
+  SND.shot(m.type === 'buck'); haptic(m.type === 'buck' || w.recoil > 1.2); noiseEvent(130); if (w.semi) puff(P.x + Math.cos(P.yaw) * .3, P.y + 1.3, P.z - Math.sin(P.yaw) * .3, m.type === 'bird' ? 0x2f6fb3 : 0xb3382e, 1, 1.5, .05, 2, 9);
+}
+function updateWeapon(dt) {
+  P.cd = Math.max(0, P.cd - dt); P.flash = Math.max(0, P.flash - dt); P.recoil = Math.max(0, P.recoil - dt * 6); P.shake = Math.max(0, P.shake - dt * 5);
+  if (P.reloading) { P.reloadT -= dt; if (P.reloadT <= 0) finishReload(); }
+  if (P.fireBuf > 0) { P.fireBuf -= dt; if (P.cd <= 0 && !P.reloading) { const m = curMag(); P.fireBuf = 0; if (m.n > 0) shoot(); else if (!startReload()) { SND.dry(); toast(S.reserve.bird + S.reserve.buck > 0 ? ${AMMO[S.ammoType].name} აღარ გაქვს — დააჭირე Q : 'ვაზნა გაგითავდა! იყიდე მაღაზიაში', 'bad'); } } }
+}
+function updatePlayer(dt) {
+  const k = keys; let mx = (k.KeyD ? 1 : 0) - (k.KeyA ? 1 : 0), mz = (k.KeyS ? 1 : 0) - (k.KeyW ? 1 : 0); P.moving = !!(mx || mz); P.crouch = !!k.KeyC;
+  P.ads = clamp(P.ads + (mouse.right ? dt / .18 : -dt / .14), 0, 1); P.eye = lerp(P.eye, P.crouch ? 1.1 : 1.7, Math.min(1, dt * 10));
+  if (P.stam <= 0) P.lock = true; if (P.stam > 25) P.lock = false; P.sprint = !!(k.ShiftLeft || k.ShiftRight) && P.moving && !P.crouch && P.ads < .5 && !P.lock;
+  const zn = zone(P.x, P.z); let sp = P.crouch ? 2 : P.sprint ? 7.8 : 4.4; if (P.ads > .3) sp *= .55; if (zn === 'thicket') sp *= .75; if (zn === 'field') sp *= .92;
+  const l = Math.hypot(mx, mz) || 1; mx /= l; mz /= l; const tvx = (mx * Math.cos(P.yaw) + mz * Math.sin(P.yaw)) * sp, tvz = (-mx * Math.sin(P.yaw) + mz * Math.cos(P.yaw)) * sp;
+  P.vx += (tvx - P.vx) * Math.min(1, dt * 10); P.vz += (tvz - P.vz) * Math.min(1, dt * 10);
+  P.x += P.vx * dt; P.z += P.vz * dt; P.r = .4; resolve(P); P.y += (heightAt(P.x, P.z) - P.y) * Math.min(1, dt * 14);
+  const spd = Math.hypot(P.vx, P.vz); P.stam = clamp(P.stam + (P.sprint ? -20 : 12) * dt, 0, 100);
+  P.noise = (P.crouch ? .5 : P.sprint ? 1.6 : spd < .5 ? .7 : 1) * (zn === 'thicket' ? 1.3 : zn === 'field' ? 1.05 : 1);
+  P.phase += spd * dt * 2.2; P.stepD += spd * dt; const stride = P.sprint ? 2.2 : P.crouch ? 1.7 : 1.9;
+  if (P.stepD > stride) { P.stepD = 0; SND.step(zn === 'verge' ? 'forest' : zn, P.crouch); if (zn === 'field' || zn === 'thicket') puff(P.x, P.y + .2, P.z, zn === 'field' ? 0xd9bd57 : 0x8a7a62, 2, 1.1, .05, .7, 2); }
+}
+function updateCamera(dt) {
+  const tf = 72 - 20 * P.ads; camera.fov += (tf - camera.fov) * Math.min(1, dt * 12); camera.updateProjectionMatrix();
+  const bob = Math.sin(P.phase) * .035 * (1 - P.ads * .7) * (P.moving ? 1 : 0), sh = P.shake;
+  camera.position.set(P.x + (Math.random() - .5) * .05 * sh, P.y + P.eye + bob + (Math.random() - .5) * .05 * sh, P.z + (Math.random() - .5) * .05 * sh);
+  camera.rotation.set(P.pitch + (Math.random() - .5) * .012 * sh, P.yaw + (Math.random() - .5) * .012 * sh, Math.cos(P.phase * .5) * .004 * (P.moving ? 1 : 0));
+  const a = P.ads, rl = P.reloading ? Math.sin(clamp(1 - P.reloadT / P.reloadTot, 0, 1) * Math.PI) : 0;
+  vm.position.set(lerp(.15, 0, a), lerp(-.18, -.07, a) - rl * .1, lerp(-.3, -.26, a) + P.recoil * .07 + (P.sprint ? .02 : 0)); vm.rotation.set(P.recoil * .12 + rl * .5, lerp(.05, 0, a), P.sprint ? -.15 : 0);
+  $('cross').style.opacity = P.ads > .3 ? 0 : .7;
+}
+
+/* ---------------- 8 FLOW ---------------- */
+function lockPointer() { try { renderer.domElement.requestPointerLock(); } catch (e) { /* ignore */ } }
+function beginGame(fresh) {
+  AU.init(); const s = loadSave(); S = fresh || !s ? newSave(($('nameInput').value || 'მონადირე').trim().slice(0, 16) || 'მონადირე') : s;
+  S.dog = S.dogs.includes(S.dog) ? S.dog : 0; for (const id of S.owned) if (!S.mags[id]) S.mags[id] = { n: 0, type: 'bird' }; if (!S.owned.includes(S.cur)) S.cur = 'single';
+  Object.assign(P, { x: cx(246), z: 246, vx: 0, vz: 0, yaw: 0, pitch: 0, stam: 100, ads: 0, reloading: false, cd: 0, fireBuf: 0 }); P.y = 0;
+  D.x = P.x + 2; D.z = P.z + 3; D.state = 'heel'; D.carry = null; vmId = ''; buildVM(); buildDog(); pellets.length = 0; parts.length = 0; populate(); saveGame();
+  G.state = 'play'; G.paused = false; $('title').classList.add('hidden'); $('hud').classList.remove('hidden'); $('hName').textContent = S.name; hudSig = ''; lockPointer();
+  toast(გამარჯობა, ${S.name}! მარჯვენა ღილაკი — თოფი მხარზე, მარცხენა — სროლა, 'gold'); setTimeout(() => toast('ყანები მარჯვნივ (მწყერი), ტყე მარცხნივ, შორს ეკალბარდებში — ხოხობი. ძაღლი გიჩვენებს ნადირს!'), 2600);
+}
+function interact() {
+  if (G.state === 'shop') { closeShop(); return; } if (G.state !== 'play') return;
+  const c = nearestCarcass(); if (c) { collect(c, false); return; }
+  if (Math.hypot(P.x - SHOPB.x, P.z - (SHOPB.z + 5)) < 5) { openShop(); return; }
+  if (Math.hypot(P.x - CABIN.x, P.z - (CABIN.z + 5)) < 5 && G.sleepT <= 0) { G.sleepT = 2.4; $('black').style.opacity = 1; SND.click(); }
+}
+function update(dt) {
+  G.t += dt; S.stats.play += dt; updatePlayer(dt); updateWeapon(dt); updatePellets(dt); updateAnimals(dt); updateDog(dt); updateParts(dt); ambience(dt);
+  if (G.sleepT > 0) { G.sleepT -= dt; if (G.sleepT < 1.2 && G.sleepT + dt >= 1.2) { populate(); saveGame(); toast('კარგად გამოიძინე. პროგრესი შენახულია — ტყე და ყანა ისევ სავსეა ნადირით.', 'good'); } if (G.sleepT <= .3) $('black').style.opacity = 0; }
+  for (const k in S.demand) if (S.demand[k] < 1) S.demand[k] = Math.min(1, S.demand[k] + dt * .002);
+  G.saveT += dt; if (G.saveT > 20) { G.saveT = 0; saveGame(); }
+}
+let ambT = 2, fireT = 1;
+function ambience(dt) {
+  ambT -= dt; if (fireMesh) { fireMesh.scale.set(1 + Math.sin(G.t * 13) * .12, 1 + Math.sin(G.t * 9) * .18, 1 + Math.sin(G.t * 11) * .12); fireLight.intensity = 1 + Math.sin(G.t * 17) * .2; }
+  if (ambT <= 0) { ambT = rand(1.5, 4); const z = zone(P.x, P.z), x = P.x + rand(-60, 60), zz = P.z + rand(-60, 60); if (z === 'forest' || z === 'verge') SND.chirp(x, zz); else if (z === 'field') (Math.random() < .6 ? SND.cricket : SND.chirp).call(SND, x, zz); else if (z === 'thicket') SND.cricket(x, zz); else SND.chirp(x, zz); }
+}
+
+/* ---------------- 9 UI / SHOP ---------------- */
+function toast(t, cls) { const b = $('toasts'), d = document.createElement('div'); d.className = 'toast ' + (cls || ''); d.textContent = t; b.appendChild(d); while (b.children.length > 4) b.removeChild(b.firstChild); setTimeout(() => d.remove(), 4800); }
+const fmt = n => '₾' + Math.round(n).toLocaleString('en-US');
+let hudSig = '', promptSig = '';
+function updateHUD() {
+  const w = curW(), m = curMag(), sig = [S.cur, m.n, m.type, S.reserve.bird, S.reserve.buck, S.ammoType, S.dog, D.mode, S.money].join('|');
+  if (sig !== hudSig) {
+    hudSig = sig; $('money').textContent = fmt(S.money); $('gName').innerHTML = <b>${w.name}</b>; let h = ''; for (let i = 0; i < w.cap; i++) h += <div class="shell ${i < m.n ? m.type : 'bird empty'}"></div>; $('shells').innerHTML = h;
+    const a = k => ${S.ammoType === k ? '▶ ' : ''}${AMMO[k].name}: <b>${S.reserve[k]}</b>; $('gAmmo').innerHTML = ${a('bird')} &nbsp; ${a('buck')} <span style="opacity:.6">(Q)</span>; $('gDog').textContent = ძაღლი: ${DOGS[S.dog].name} — ${D.mode === 'search' ? 'ეძებს' : 'ფეხთან'} (F);
+  }
+  $('stBar').style.width = P.stam + '%'; const rl = $('rl'); if (P.reloading) { rl.style.display = 'block'; rl.firstElementChild.style.width = (100 * (1 - P.reloadT / P.reloadTot)) + '%'; } else rl.style.display = 'none';
+  let pr = ''; const c = nearestCarcass();
+  if (c) pr = E — აიღე: ${c.sp.name}; else if (Math.hypot(P.x - SHOPB.x, P.z - (SHOPB.z + 5)) < 5) pr = 'E — მაღაზია'; else if (Math.hypot(P.x - CABIN.x, P.z - (CABIN.z + 5)) < 5) pr = 'E — დაძინება და შენახვა';
+  if (pr !== promptSig) { promptSig = pr; const p = $('prompt'); p.textContent = pr; p.style.display = pr ? 'block' : 'none'; }
+}
+let tab = 'guns';
+const sb = (l, v) => <div class="st"><span>${l}</span><div><i style="width:${clamp(v, 3, 100)}%"></i></div></div>;
+const unitPrice = (k, q) => Math.max(1, Math.round(SP[k].price * QM[q] * (S.demand[k] === undefined ? 1 : S.demand[k])));
+const invLines = () => Object.keys(S.inv).filter(k => S.inv[k] > 0).map(k => { const [kind, q] = k.split('|'); return { k, kind, q: +q, n: S.inv[k], p: unitPrice(kind, +q) }; }).sort((a, b) => b.p - a.p);
+function renderShop() {
+  $('shMoney').textContent = fmt(S.money); let h = ''; document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  if (tab === 'guns') h = '<div class="grid">' + WEAP.map(w => { const own = S.owned.includes(w.id), eq = S.cur === w.id; return <div class="it ${eq ? 'eq' : ''}"><h3>${w.name}</h3><p>${w.desc}</p>${sb('გაბნევა', w.stats[0])}${sb('სიშორე', w.stats[1])}${sb('სისწრაფე', w.stats[2])}${sb('ტევადობა', w.stats[3])}<p class="pr">${own ? (eq ? 'აღჭურვილია' : 'გაქვს') : fmt(w.price)}</p> + (own ? <button data-a="equip" data-id="${w.id}" ${eq ? 'disabled' : ''}>${eq ? 'აღჭურვილია' : 'აღჭურვა'}</button> : <button data-a="buyw" data-id="${w.id}" ${S.money < w.price ? 'disabled' : ''}>ყიდვა ${fmt(w.price)}</button>) + '</div>'; }).join('') + '</div>';
+  else if (tab === 'ammo') h = '<div class="grid">' + Object.values(AMMO).map(a => <div class="it"><h3>${a.name}</h3><p>${a.desc}<br>გაქვს: <b>${S.reserve[a.key]}</b></p><p class="pr">${fmt(a.price)} / ვაზნა</p><button data-a="buya" data-k="${a.key}" data-n="10" ${S.money < a.price * 10 ? 'disabled' : ''}>10 ცალი — ${fmt(a.price * 10)}</button><button data-a="buya" data-k="${a.key}" data-n="25" ${S.money < a.price * 25 ? 'disabled' : ''}>25 ცალი — ${fmt(a.price * 25)}</button></div>).join('') + '</div><div class="note">მინიშნება: ველზე Q-თი აირჩიე რომელი ვაზნა ჩაიტენოს.</div>';
+  else if (tab === 'dogs') h = '<div class="grid">' + DOGS.map((d, i) => { const own = S.dogs.includes(i), eq = S.dog === i; return <div class="it ${eq ? 'eq' : ''}"><h3>${d.name}</h3><p>${d.desc}</p>${sb('ყნოსვა', d.detect / .35)}${sb('სისწრაფე', d.speed / .1)}<p class="pr">${own ? (eq ? 'ნადირობს შენთან' : 'გყავს') : fmt(d.price)}</p> + (own ? <button data-a="equipd" data-i="${i}" ${eq ? 'disabled' : ''}>${eq ? 'აქტიურია' : 'წაიყვანე ნადირობაზე'}</button> : <button data-a="buyd" data-i="${i}" ${S.money < d.price ? 'disabled' : ''}>ყიდვა ${fmt(d.price)}</button>) + '</div>'; }).join('') + '</div>';
+  else { const L = invLines(), tot = L.reduce((s, l) => s + l.p * l.n, 0); h = L.length ? <table><tr><th>ნადირი</th><th>ხარისხი</th><th>რაოდ.</th><th>ბაზარი</th><th>ცალი</th><th></th></tr>${L.map(l => { const dm = S.demand[l.kind] === undefined ? 1 : S.demand[l.kind]; return `<tr><td>${SP[l.kind].name}</td><td class="q${l.q}">${QN[l.q]}</td><td>${l.n}</td><td>${Math.round(dm * 100)}%</td><td>${fmt(l.p)}</td><td><button data-a="sell1" data-k="${l.k}">1 ცალი</button> <button data-a="sellall" data-k="${l.k}">ყველა</button></td></tr>; }).join('')}</table><div class="row"><button data-a="sellEverything">ყველაფრის გაყიდვა — ${fmt(tot)}</button></div><div class="note">ფასი ხარისხზე (სუფთა გასროლა = მეტი) და მოთხოვნაზე დამოკიდებულია: ერთი სახეობის ბევრი გაყიდვა ფასს ამცირებს, მერე ნელა ბრუნდება.</div>` : '<p style="margin:18px 0;opacity:.85">ჩანთა ცარიელია. წადი სანადიროდ!</p>'; }
+  $('shBody').innerHTML = h;
+}
+function sellKey(k, count) { const [kind, q] = k.split('|'), n = Math.min(count, S.inv[k] || 0); let g = 0; for (let i = 0; i < n; i++) { g += unitPrice(kind, +q); S.inv[k]--; S.demand[kind] = Math.max(.55, (S.demand[kind] === undefined ? 1 : S.demand[kind]) - .02); } if (S.inv[k] <= 0) delete S.inv[k]; S.money += g; S.stats.earned += g; return g; }
+$('shBody').addEventListener('click', e => {
+  const b = e.target.closest ? e.target.closest('button') : null; if (!b || b.disabled) return; const a = b.dataset.a;
+  if (a === 'buyw') { const w = WBY[b.dataset.id]; if (S.money >= w.price) { S.money -= w.price; S.owned.push(w.id); S.mags[w.id] = { n: 0, type: 'bird' }; toast(იყიდე: ${w.name}, 'gold'); SND.coin(); } }
+  else if (a === 'equip') { switchWeapon(WEAP.findIndex(w => w.id === b.dataset.id)); }
+  else if (a === 'buya') { const am = AMMO[b.dataset.k], n = +b.dataset.n; if (S.money >= am.price * n) { S.money -= am.price * n; S.reserve[am.key] += n; SND.coin(); } }
+  else if (a === 'buyd') { const i = +b.dataset.i, d = DOGS[i]; if (S.money >= d.price) { S.money -= d.price; S.dogs.push(i); S.dog = i; toast(${d.name} ახლა შენთანაა!, 'gold'); SND.coin(); } }
+  else if (a === 'equipd') { S.dog = +b.dataset.i; SND.click(); }
+  else if (a === 'sell1') { if (sellKey(b.dataset.k, 1)) SND.coin(); } else if (a === 'sellall') { const g = sellKey(b.dataset.k, 9999); if (g) { toast(გაყიდე ${fmt(g)}-ად, 'gold'); SND.coin(); } }
+  else if (a === 'sellEverything') { let g = 0; for (const l of invLines()) g += sellKey(l.k, 9999); if (g) { toast(ყველაფერი გაიყიდა ${fmt(g)}-ად, 'gold'); SND.coin(); } }
+  hudSig = ''; renderShop(); saveGame();
+});
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; SND.click(); renderShop(); }));
+function openShop() { G.state = 'shop'; $('shop').classList.remove('hidden'); try { document.exitPointerLock(); } catch (e) { /* ignore */ } renderShop(); SND.click(); }
+function closeShop() { $('shop').classList.add('hidden'); $('inv').classList.add('hidden'); G.state = 'play'; lockPointer(); saveGame(); }
+function openInv() { G.state = 'shop'; $('inv').classList.remove('hidden'); try { document.exitPointerLock(); } catch (e) { /* ignore */ } const L = invLines(), st = S.stats, kills = Object.entries(st.kills).map(([k, n]) => ${SP[k].name}: ${n}).join(' · ') || 'ჯერ არაფერი', acc = st.shots ? Math.round(100 * st.hits / st.shots) : 0; $('invBody').innerHTML = <p style="margin:8px 0">ფული: <b>${fmt(S.money)}</b> · გასროლა/მოხვედრა: <b>${st.shots} / ${acc}%</b> · შემოსავალი: <b>${fmt(st.earned)}</b></p><p style="font-size:13px;margin-bottom:10px">მოპოვებული — ${kills}</p> + (L.length ? <table><tr><th>ნადირი</th><th>ხარისხი</th><th>რაოდ.</th><th>ღირებულება</th></tr>${L.map(l => `<tr><td>${SP[l.kind].name}</td><td class="q${l.q}">${QN[l.q]}</td><td>${l.n}</td><td>${fmt(l.p * l.n)}</td></tr>).join('')}</table>` : '<p style="opacity:.8">ჩანთა ცარიელია.</p>'); }
+$('shClose').onclick = closeShop; $('invClose').onclick = closeShop;
+$('bResume').onclick = () => { $('pause').classList.add('hidden'); G.paused = false; lockPointer(); };
+$('bQuit').onclick = () => { saveGame(); $('pause').classList.add('hidden'); G.paused = false; G.state = 'title'; $('hud').classList.add('hidden'); $('title').classList.remove('hidden'); refreshStart(); };
+function refreshStart() { const s = loadSave(); $('bContinue').style.display = s ? '' : 'none'; if (s) $('nameInput').value = s.name; }
+$('bNew').onclick = () => { if (loadSave() && !confirm('დავიწყოთ ახალი თამაში? შენახული პროგრესი წაიშლება.')) return; beginGame(true); };
+$('bContinue').onclick = () => beginGame(false);
+$('nameInput').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') (loadSave() ? $('bContinue') : $('bNew')).click(); });
+
+function onKey(code, down) {
+  keys[code] = down; if (!down) return;
+  if (code === 'KeyM') { AU.setMute(!AU.muted); toast(AU.muted ? 'ხმა გამორთულია' : 'ხმა ჩართულია'); }
+  if (code === 'KeyE') interact(); if (code === 'Tab' && G.state === 'shop' && !$('inv').classList.contains('hidden')) { closeShop(); return; }
+  if (G.state !== 'play' || G.paused) return;
+  if (code.startsWith('Digit')) switchWeapon(+code.slice(5) - 1); else if (code === 'KeyR') startReload();
+  else if (code === 'KeyQ') { S.ammoType = S.ammoType === 'bird' ? 'buck' : 'bird'; toast(შემდეგი ჩატენვა: ${AMMO[S.ammoType].name}); SND.click(); if (curMag().n === 0 || curMag().type !== S.ammoType) startReload(); }
+  else if (code === 'KeyF') { D.mode = D.mode === 'search' ? 'heel' : 'search'; toast(D.mode === 'search' ? 'ძაღლი: ეძებს' : 'ძაღლი: ფეხთან'); SND.bark(D.x, D.z, true); }
+  else if (code === 'Tab') openInv();
+}
+function onMouse(btn, down) { if (G.state !== 'play' || G.paused) return; if (btn === 2) { mouse.right = down; return; } if (btn === 0 && down) P.fireBuf = .18; }
+addEventListener('keydown', e => { if (e.target && e.target.tagName === 'INPUT') return; if (['Space', 'Tab'].includes(e.code)) e.preventDefault(); if (!e.repeat) onKey(e.code, true); });
+addEventListener('keyup', e => { keys[e.code] = false; });
+addEventListener('mousedown', e => { if (document.pointerLockElement) onMouse(e.button, true); });
+addEventListener('mouseup', e => { if (e.button === 2) mouse.right = false; });
+addEventListener('contextmenu', e => e.preventDefault());
+addEventListener('mousemove', e => { if (!document.pointerLockElement || G.state !== 'play') return; const k = .0022 * (camera.fov / 72); P.yaw -= e.movementX * k; P.pitch = clamp(P.pitch - e.movementY * k, -1.45, 1.45); });
+document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && G.state === 'play' && !G.paused) { G.paused = true; mouse.right = false; $('pause').classList.remove('hidden'); saveGame(); } });
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.right = false; });
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+addEventListener('beforeunload', () => { if (G.state !== 'title') saveGame(); });
+
+/* ---------------- 10 LOOP ---------------- */
+function tick(dt) {
+  if (G.state === 'play' && !G.paused) update(dt);
+  for (const c of clouds) { c.x += dt * c.s; if (c.x > 320) c.x = -320; c.g.position.x = c.x; }
+  if (G.state === 'play' || G.state === 'shop') { updateCamera(dt); if (G.state === 'play') updateHUD(); }
+  renderer.render(scene, camera);
+}
+let last = performance.now();
+function frame(now) {
+  requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now;
+  if (G.state === 'title') { G.t += dt; const a = G.t * .06; camera.position.set(HX + Math.sin(a) * 40, 14, HUBZ + 50 + Math.cos(a) * 10); camera.rotation.set(-.22, Math.sin(a) * .5, 0); vm.visible = false; for (const c of clouds) { c.x += dt * c.s; c.g.position.x = c.x; } renderer.render(scene, camera); } else { vm.visible = true; tick(dt); }
+}
+buildTerrain(); buildSky(); buildNature(); buildHub(); buildDog(); buildVM(); refreshStart();
+window.__g = { tick, update, S: () => S, P, G, D, animals, carcasses, pellets, keys, onKey, onMouse, beginGame, shoot, flush, collect, nearestCarcass, interact, openShop, renderShop, openInv, zone, TH, cx, HX, HUBZ, SP, spawnAnimal, startReload, switchWeapon, killAnimal, haptic, shopClick: (a, id, n, k, i) => $('shBody').dispatchEvent({ target: { closest: () => ({ disabled: false, dataset: { a, id, n, k, i } }) } }) };
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
